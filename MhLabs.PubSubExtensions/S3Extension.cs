@@ -16,7 +16,7 @@ namespace MhLabs.PubSubExtensions
         public const string PubSubBucket = "PubSub_S3Bucket";
         public const string PubSubKey = "PubSub_S3Key";
 
-        internal static async Task PubSubS3Query(this IAmazonS3 s3Client, PublishRequest request, S3MessageSettings s3Settings = null, CancellationToken cancellationToken = default(CancellationToken))
+        internal static async Task UploadMessage(this IAmazonS3 s3Client, PublishRequest request, S3MessageSettings s3Settings = null, CancellationToken cancellationToken = default(CancellationToken))
         {
             var key = await UploadToS3(s3Client, request, s3Settings, cancellationToken);            
             request.Message = "#";
@@ -25,7 +25,7 @@ namespace MhLabs.PubSubExtensions
             request.MessageAttributes.Add(PubSubKey, new Amazon.SimpleNotificationService.Model.MessageAttributeValue { StringValue = key, DataType = "String" });
         }
 
-        internal static async Task PubSubS3Query(this IAmazonS3 s3Client, SendMessageRequest request, S3MessageSettings s3Settings = null, CancellationToken cancellationToken = default(CancellationToken))
+        internal static async Task UploadMessage(this IAmazonS3 s3Client, SendMessageRequest request, S3MessageSettings s3Settings = null, CancellationToken cancellationToken = default(CancellationToken))
         {
             var key = await UploadToS3(s3Client, request, s3Settings, cancellationToken);
             request.MessageBody = "#";

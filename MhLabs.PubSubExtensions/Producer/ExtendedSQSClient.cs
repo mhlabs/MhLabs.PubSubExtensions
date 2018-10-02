@@ -20,7 +20,7 @@ namespace MhLabs.PubSubExtensions.Producer
         {
             if (BytesHelper.TooLarge(request))
             {
-                await _s3Client.PubSubS3Query(request, _s3Settings);
+                await _s3Client.UploadMessage(request, _s3Settings);
             }
             return await base.SendMessageAsync(request, cancellationToken);
         }
