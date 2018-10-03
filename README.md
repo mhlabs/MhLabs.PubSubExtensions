@@ -80,6 +80,7 @@ In the `Resources` section of `serverless.template`:
   }
 }
 ``` 
+
 Also add a consumer Lambda resource to consume the queue:
 ```
 "SQSConsumer": {
