@@ -2,7 +2,7 @@
 
 Extended functionality of `AmazonSimpleNotificationServiceClient` and `AmazonSQSClient` that handles messages larger than 256KB up to 2GB.
 
-## Known issues/limits
+## Known issues/limitations
 * Only supports publishing to SNS. SQS will be a later feature
 * Only supports SNS/SQS consumption through AWS Lambda using SNS or SQS as event source.
 
