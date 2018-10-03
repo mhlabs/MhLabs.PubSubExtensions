@@ -140,7 +140,7 @@ public class MyExtractor : IMessageExtractor
 ```
 
 and register it with the base:
-```
+
 ```
 public class SQSConsumer : MessageProcessorBase<SQSEvent, DefaultModel>
 {
