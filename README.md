@@ -143,7 +143,7 @@ public class MyExtractor : IMessageExtractor
 and register it with the base:
 
 ```
-public class SQSConsumer : MessageProcessorBase<SQSEvent, DefaultModel>
+public class SQSConsumer : MessageProcessorBase<SQSEvent, Model>
 {
     public SQSConsumer() {
         base.RegisterExtractor(new MyExtractor());
