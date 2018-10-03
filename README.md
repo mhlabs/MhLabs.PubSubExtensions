@@ -24,7 +24,7 @@ public ProducingService(IAmazonSimpleNotificationService snsClient)
 
 public async Task Publish(Model model)
 {            
-    var response = await _sns.PublishAsync(_topic, JsonConvert.SerializeObject(model));
+    var response = await _snsClient.PublishAsync(_topic, JsonConvert.SerializeObject(model));
 }
 ```
 
@@ -116,7 +116,7 @@ Also add a consumer Lambda resource to consume the queue:
 
 For SNS, SQS and Kinesis consumers, the message extraction and deserialization is performed on the base class. This to avoid boiletplate in your lambda handler. 
 ```
-public class SQSConsumer : MessageProcessorBase<SQSEvent, DefaultModel>
+public class SQSConsumer : MessageProcessorBase<SQSEvent, Model>
 {
     protected override async Task HandleEvent(IEnumerable<Model> items, ILambdaContext context)
     {
