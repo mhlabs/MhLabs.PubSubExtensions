@@ -14,8 +14,10 @@ namespace MhLabs.PubSubExtensions.Consumer.Extractors
 
         public async Task<IEnumerable<TMessageType>> ExtractEventBody<TEventType, TMessageType>(TEventType ev) {
             var sqsEvent = ev as SQSEvent;            
-            return await Task.FromResult(sqsEvent.Records.Select(p => JsonConvert.DeserializeObject<TMessageType>(p.Body)));
+            return await Task.FromResult(sqsEvent.Records.Select(p => {
+                Console.WriteLine(p.Body);
+                return JsonConvert.DeserializeObject<TMessageType>(p.Body);
+                }));
         }
-
     }
 }

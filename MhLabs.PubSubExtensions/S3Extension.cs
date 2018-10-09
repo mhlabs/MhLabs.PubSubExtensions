@@ -13,41 +13,40 @@ namespace MhLabs.PubSubExtensions
 {
     internal static class S3Extension
     {
-        public const string PubSubBucket = "PubSub_S3Bucket";
-        public const string PubSubKey = "PubSub_S3Key";
 
-        internal static async Task UploadMessage(this IAmazonS3 s3Client, PublishRequest request, S3MessageSettings s3Settings = null, CancellationToken cancellationToken = default(CancellationToken))
+
+        internal static async Task PubSubS3Query(this IAmazonS3 s3Client, PublishRequest request, MessageDeliverySettings deliverySettings = null, CancellationToken cancellationToken = default(CancellationToken))
         {
-            var key = await UploadToS3(s3Client, request, s3Settings, cancellationToken);            
+            var key = await UploadToS3(s3Client, request, deliverySettings, cancellationToken);            
             request.Message = "#";
-            request.MessageAttributes = new Dictionary<string, Amazon.SimpleNotificationService.Model.MessageAttributeValue>();
-            request.MessageAttributes.Add(PubSubBucket, new Amazon.SimpleNotificationService.Model.MessageAttributeValue { StringValue = s3Settings.Bucket, DataType = "String" });
-            request.MessageAttributes.Add(PubSubKey, new Amazon.SimpleNotificationService.Model.MessageAttributeValue { StringValue = key, DataType = "String" });
+//            request.MessageAttributes = new Dictionary<string, Amazon.SimpleNotificationService.Model.MessageAttributeValue>();
+            request.MessageAttributes.Add(Constants.PubSubBucket, new Amazon.SimpleNotificationService.Model.MessageAttributeValue { StringValue = deliverySettings.Bucket, DataType = "String" });
+            request.MessageAttributes.Add(Constants.PubSubKey, new Amazon.SimpleNotificationService.Model.MessageAttributeValue { StringValue = key, DataType = "String" });
         }
 
-        internal static async Task UploadMessage(this IAmazonS3 s3Client, SendMessageRequest request, S3MessageSettings s3Settings = null, CancellationToken cancellationToken = default(CancellationToken))
+        internal static async Task PubSubS3Query(this IAmazonS3 s3Client, SendMessageRequest request, MessageDeliverySettings deliverySettings = null, CancellationToken cancellationToken = default(CancellationToken))
         {
-            var key = await UploadToS3(s3Client, request, s3Settings, cancellationToken);
+            var key = await UploadToS3(s3Client, request, deliverySettings, cancellationToken);
             request.MessageBody = "#";
-            request.MessageAttributes = new Dictionary<string, Amazon.SQS.Model.MessageAttributeValue>();
-            request.MessageAttributes.Add(PubSubBucket, new Amazon.SQS.Model.MessageAttributeValue { StringValue = s3Settings.Bucket, DataType = "String" });
-            request.MessageAttributes.Add(PubSubKey, new Amazon.SQS.Model.MessageAttributeValue { StringValue = key, DataType = "String" });
+//            request.MessageAttributes = new Dictionary<string, Amazon.SQS.Model.MessageAttributeValue>();
+            request.MessageAttributes.Add(Constants.PubSubBucket, new Amazon.SQS.Model.MessageAttributeValue { StringValue = deliverySettings.Bucket, DataType = "String" });
+            request.MessageAttributes.Add(Constants.PubSubKey, new Amazon.SQS.Model.MessageAttributeValue { StringValue = key, DataType = "String" });
         }
 
-        private static async Task<string> UploadToS3(IAmazonS3 s3Client, object obj, S3MessageSettings s3Settings = null, CancellationToken cancellationToken = default(CancellationToken))
+        private static async Task<string> UploadToS3(IAmazonS3 s3Client, object obj, MessageDeliverySettings deliverySettings = null, CancellationToken cancellationToken = default(CancellationToken))
         {
-            s3Settings = s3Settings ?? new S3MessageSettings();
+            deliverySettings = deliverySettings ?? new MessageDeliverySettings();
             var key = Guid.NewGuid().ToString();
             var putRequest = new PutObjectRequest
             {
-                BucketName = s3Settings.Bucket,
+                BucketName = deliverySettings.Bucket,
                 Key = key,
                 ContentBody = JsonConvert.SerializeObject(obj)
             };
             var upload = await s3Client.PutObjectAsync(putRequest, cancellationToken);
             if (upload.HttpStatusCode != HttpStatusCode.OK)
             {
-                throw new AmazonS3Exception($"Error uploading to {s3Settings.Bucket} with key {key}");
+                throw new AmazonS3Exception($"Error uploading to {deliverySettings.Bucket} with key {key}");
             }
             return key;
         }

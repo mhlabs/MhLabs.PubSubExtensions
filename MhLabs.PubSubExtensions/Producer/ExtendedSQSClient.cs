@@ -13,14 +13,14 @@ namespace MhLabs.PubSubExtensions.Producer
 {
     public class ExtendedSQSClient : AmazonSQSClient
     {
-        public S3MessageSettings _s3Settings = new S3MessageSettings();
+        public MessageDeliverySettings _s3Settings = new MessageDeliverySettings();
         public IAmazonS3 _s3Client = new AmazonS3Client(RegionEndpoint.GetBySystemName(Environment.GetEnvironmentVariable("DEFAULT_AWS_REGION")));
 
         public override async Task<SendMessageResponse> SendMessageAsync(SendMessageRequest request, CancellationToken cancellationToken = default(CancellationToken))
         {
             if (BytesHelper.TooLarge(request))
             {
-                await _s3Client.UploadMessage(request, _s3Settings);
+                await _s3Client.PubSubS3Query(request, _s3Settings);
             }
             return await base.SendMessageAsync(request, cancellationToken);
         }

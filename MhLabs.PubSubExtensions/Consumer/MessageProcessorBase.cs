@@ -59,17 +59,20 @@ namespace MhLabs.PubSubExtensions.Consumer
                 foreach (var record in sqs.Records)
                 {
 
-                    if (record.MessageAttributes.ContainsKey(S3Extension.PubSubBucket))
+                    if (record.MessageAttributes.ContainsKey(Constants.PubSubBucket))
                     {
-                        var bucket = record.MessageAttributes[S3Extension.PubSubBucket].StringValue;
-                        var key = record.MessageAttributes[S3Extension.PubSubKey].StringValue;
+                        var bucket = record.MessageAttributes[Constants.PubSubBucket].StringValue;
+                        var key = record.MessageAttributes[Constants.PubSubKey].StringValue;
                         var s3Response = await _s3Client.GetObjectAsync(bucket, key);
                         var json = await ReadStream(s3Response.ResponseStream);
                         var snsEvent = JsonConvert.DeserializeObject<SNSMessage>(json);
                         record.Body = snsEvent.Message;
                         foreach (var attribute in snsEvent.MessageAttributes)
                         {
-                            record.MessageAttributes.Add(attribute.Key, new SQSEvent.MessageAttribute { DataType = "String", StringValue = attribute.Value.Value });
+                            if (!record.MessageAttributes.ContainsKey(attribute.Key))
+                            {
+                                record.MessageAttributes.Add(attribute.Key, new SQSEvent.MessageAttribute { DataType = "String", StringValue = attribute.Value.Value });
+                            }
                         }
 
                     }
@@ -80,17 +83,20 @@ namespace MhLabs.PubSubExtensions.Consumer
             {
                 foreach (var record in sns.Records)
                 {
-                    if (record.Sns.MessageAttributes.ContainsKey(S3Extension.PubSubBucket))
+                    if (record.Sns.MessageAttributes.ContainsKey(Constants.PubSubBucket))
                     {
-                        var bucket = record.Sns.MessageAttributes[S3Extension.PubSubBucket].Value;
-                        var key = record.Sns.MessageAttributes[S3Extension.PubSubKey].Value;
+                        var bucket = record.Sns.MessageAttributes[Constants.PubSubBucket].Value;
+                        var key = record.Sns.MessageAttributes[Constants.PubSubKey].Value;
                         var s3Response = await _s3Client.GetObjectAsync(bucket, key);
                         var json = await ReadStream(s3Response.ResponseStream);
                         var snsEvent = JsonConvert.DeserializeObject<SNSMessage>(json);
                         record.Sns.Message = snsEvent.Message;
                         foreach (var attribute in snsEvent.MessageAttributes)
                         {
-                            record.Sns.MessageAttributes.Add(attribute.Key, attribute.Value);
+                            if (!record.Sns.MessageAttributes.ContainsKey(attribute.Key))
+                            {
+                                record.Sns.MessageAttributes.Add(attribute.Key, attribute.Value);
+                            }
                         }
                     }
                 }
