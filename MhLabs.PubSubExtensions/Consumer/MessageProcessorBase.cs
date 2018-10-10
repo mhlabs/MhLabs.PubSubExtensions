@@ -21,7 +21,7 @@ namespace MhLabs.PubSubExtensions.Consumer
     public abstract class MessageProcessorBase<TEventType, TMessageType>
     {
 
-        private static IDictionary<Type, IMessageExtractor> _messageExtractorRegister = new Dictionary<Type, IMessageExtractor>();
+        private readonly IDictionary<Type, IMessageExtractor> _messageExtractorRegister = new Dictionary<Type, IMessageExtractor>();
 
         protected abstract Task HandleEvent(IEnumerable<TMessageType> items, ILambdaContext context);
 
