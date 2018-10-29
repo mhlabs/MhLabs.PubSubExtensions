@@ -29,7 +29,12 @@ namespace MhLabs.PubSubExtensions.Consumer
 
         protected void RegisterExtractor(IMessageExtractor extractor)
         {
-            _messageExtractorRegister.Add(extractor.ExtractorForType, extractor);
+            if (!_messageExtractorRegister.ContainsKey(extractor.ExtractorForType))
+            {
+                _messageExtractorRegister.Add(extractor.ExtractorForType, extractor);
+            } else {
+                _messageExtractorRegister[extractor.ExtractorForType] = extractor;
+            }
         }
 
         protected MessageProcessorBase(IAmazonS3 s3Client = null)
