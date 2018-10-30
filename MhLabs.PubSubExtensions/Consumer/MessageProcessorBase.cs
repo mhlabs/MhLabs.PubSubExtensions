@@ -14,6 +14,7 @@ using Amazon.SQS.Model;
 using MhLabs.PubSubExtensions.Consumer.Extractors;
 using Newtonsoft.Json;
 using static Amazon.Lambda.SNSEvents.SNSEvent;
+using static Amazon.Lambda.SQSEvents.SQSEvent;
 
 namespace MhLabs.PubSubExtensions.Consumer
 {
@@ -32,7 +33,9 @@ namespace MhLabs.PubSubExtensions.Consumer
             if (!_messageExtractorRegister.ContainsKey(extractor.ExtractorForType))
             {
                 _messageExtractorRegister.Add(extractor.ExtractorForType, extractor);
-            } else {
+            }
+            else
+            {
                 _messageExtractorRegister[extractor.ExtractorForType] = extractor;
             }
         }
@@ -71,12 +74,27 @@ namespace MhLabs.PubSubExtensions.Consumer
                         var s3Response = await _s3Client.GetObjectAsync(bucket, key);
                         var json = await ReadStream(s3Response.ResponseStream);
                         var snsEvent = JsonConvert.DeserializeObject<SNSMessage>(json);
-                        record.Body = snsEvent.Message;
-                        foreach (var attribute in snsEvent.MessageAttributes)
+                        if (snsEvent != null)
                         {
-                            if (!record.MessageAttributes.ContainsKey(attribute.Key))
+                            record.Body = snsEvent.Message;
+                            foreach (var attribute in snsEvent.MessageAttributes)
                             {
-                                record.MessageAttributes.Add(attribute.Key, new SQSEvent.MessageAttribute { DataType = "String", StringValue = attribute.Value.Value });
+                                if (!record.MessageAttributes.ContainsKey(attribute.Key))
+                                {
+                                    record.MessageAttributes.Add(attribute.Key, new SQSEvent.MessageAttribute { DataType = "String", StringValue = attribute.Value.Value });
+                                }
+                            }
+                        }
+                        else
+                        {
+                            var sqsEvent = JsonConvert.DeserializeObject<SQSMessage>(json);
+                            record.Body = sqsEvent.Body;
+                            foreach (var attribute in sqsEvent.MessageAttributes)
+                            {
+                                if (!record.MessageAttributes.ContainsKey(attribute.Key))
+                                {
+                                    record.MessageAttributes.Add(attribute.Key, new SQSEvent.MessageAttribute { DataType = "String", StringValue = attribute.Value.StringValue });
+                                }
                             }
                         }
 
