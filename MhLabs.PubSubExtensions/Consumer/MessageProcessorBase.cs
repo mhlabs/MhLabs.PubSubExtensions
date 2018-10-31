@@ -87,8 +87,8 @@ namespace MhLabs.PubSubExtensions.Consumer
                         }
                         else
                         {
-                            var sqsEvent = JsonConvert.DeserializeObject<SQSMessage>(json);
-                            record.Body = sqsEvent.Body;
+                            var sqsEvent = JsonConvert.DeserializeObject<SendMessageRequest>(json);
+                            record.Body = sqsEvent.MessageBody;
                             foreach (var attribute in sqsEvent.MessageAttributes)
                             {
                                 if (!record.MessageAttributes.ContainsKey(attribute.Key))
