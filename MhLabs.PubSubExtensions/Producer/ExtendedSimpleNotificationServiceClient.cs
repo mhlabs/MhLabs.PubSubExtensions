@@ -17,9 +17,9 @@ namespace MhLabs.PubSubExtensions.Producer
 {
     public class ExtendedSimpleNotificationServiceClient : AmazonSimpleNotificationServiceClient
     {
-        public MessageDeliverySettings _messageDeliverySettings = new MessageDeliverySettings();
+        public IMessageDeliverySettings _messageDeliverySettings = new MessageDeliverySettings();
         public IAmazonS3 _s3Client = new AmazonS3Client();
-        public IAmazonStepFunctions _stepFunctions = new AmazonStepFunctionsClient();
+        public IAmazonStepFunctionsClientAdapter _stepFunctions = new AmazonStepFunctionsClientAdapter(new AmazonStepFunctionsClient());
 
         public ExtendedSimpleNotificationServiceClient() : base() { }
         public ExtendedSimpleNotificationServiceClient(RegionEndpoint region) : base(region) { }
@@ -37,30 +37,19 @@ namespace MhLabs.PubSubExtensions.Producer
 
         public override async Task<PublishResponse> PublishAsync(PublishRequest request, CancellationToken cancellationToken = default(CancellationToken))
         {
-
-
             if (request.MessageAttributes.ContainsKey(Constants.DelaySeconds) && int.Parse(request.MessageAttributes[Constants.DelaySeconds].StringValue) > 0)
             {
                 if (BytesHelper.TooLarge(request, 32000))
                 {
-                    await _s3Client.PubSubS3Query(request, _messageDeliverySettings);
+                    await _s3Client.PubSubS3Query(request, _messageDeliverySettings, cancellationToken);
                 }
-                await _stepFunctions.StartExecutionAsync(new StartExecutionRequest
-                {
-                    Input = JsonConvert.SerializeObject(request),
-                    Name = request.MessageAttributes.ContainsKey(Constants.StepFunctionsName)
-                        ? request.MessageAttributes[Constants.StepFunctionsName].StringValue
-                        : Guid.NewGuid().ToString(),
-                    StateMachineArn = _messageDeliverySettings.StateMachine
-                });
-                return new PublishResponse
-                {
-                    HttpStatusCode = HttpStatusCode.OK
-                };
+
+                return await _stepFunctions.PublishAsync(request, _messageDeliverySettings.StateMachine, cancellationToken);
             }
-            else if (BytesHelper.TooLarge(request))
+
+            if (BytesHelper.TooLarge(request))
             {
-                await _s3Client.PubSubS3Query(request, _messageDeliverySettings);
+                await _s3Client.PubSubS3Query(request, _messageDeliverySettings, cancellationToken);
             }
 
             return await base.PublishAsync(request, cancellationToken);
