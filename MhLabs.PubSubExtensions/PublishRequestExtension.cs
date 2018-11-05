@@ -29,14 +29,14 @@ namespace MhLabs.PubSubExtensions
             request.MessageAttributes.Add(Constants.StepFunctionsName, new MessageAttributeValue {DataType = "String", StringValue = name});
         }
 
-        public static string GetExecutionName(this PublishRequest request)
+        internal static string GetExecutionName(this PublishRequest request)
         {
             return request.MessageAttributes.ContainsKey(Constants.StepFunctionsName)
                 ? request.MessageAttributes[Constants.StepFunctionsName].StringValue
                 : Guid.NewGuid().ToString();
         }
 
-        public static bool ShouldSuppressExecutionAlreadyExistsException(this PublishRequest request)
+        internal static bool ShouldSuppressExecutionAlreadyExistsException(this PublishRequest request)
         {
             return request.MessageAttributes.ContainsKey(Constants.SuppressExecutionAlreadyExistsException) && 
                    request.MessageAttributes[Constants.SuppressExecutionAlreadyExistsException].StringValue == true.ToString();
