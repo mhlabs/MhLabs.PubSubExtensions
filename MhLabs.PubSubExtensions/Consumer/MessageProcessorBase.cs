@@ -19,7 +19,7 @@ using static Amazon.Lambda.SQSEvents.SQSEvent;
 namespace MhLabs.PubSubExtensions.Consumer
 {
 
-    public abstract class MessageProcessorBase<TEventType, TMessageType>
+    public abstract class MessageProcessorBase<TEventType, TMessageType> where TMessageType : class
     {
 
         private readonly IDictionary<Type, IMessageExtractor> _messageExtractorRegister = new Dictionary<Type, IMessageExtractor>();
@@ -49,7 +49,7 @@ namespace MhLabs.PubSubExtensions.Consumer
         }
 
         [LambdaSerializer(typeof(Amazon.Lambda.Serialization.Json.JsonSerializer))]
-        public async Task Process(TEventType ev, ILambdaContext context)
+        public async Task Process(TEventType ev, ILambdaContext context) 
         {
             await ExtractMessage(ev);
             var rawData = await _messageExtractorRegister[ev.GetType()].ExtractEventBody<TEventType, TMessageType>(ev);
