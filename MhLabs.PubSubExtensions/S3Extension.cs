@@ -15,7 +15,7 @@ namespace MhLabs.PubSubExtensions
     {
 
 
-        internal static async Task PubSubS3Query(this IAmazonS3 s3Client, PublishRequest request, MessageDeliverySettings deliverySettings = null, CancellationToken cancellationToken = default(CancellationToken))
+        internal static async Task PubSubS3Query(this IAmazonS3 s3Client, PublishRequest request, IMessageDeliverySettings deliverySettings = null, CancellationToken cancellationToken = default(CancellationToken))
         {
             var key = await UploadToS3(s3Client, request, deliverySettings, cancellationToken);            
             request.Message = "#";
@@ -24,7 +24,7 @@ namespace MhLabs.PubSubExtensions
             request.MessageAttributes.Add(Constants.PubSubKey, new Amazon.SimpleNotificationService.Model.MessageAttributeValue { StringValue = key, DataType = "String" });
         }
 
-        internal static async Task PubSubS3Query(this IAmazonS3 s3Client, SendMessageRequest request, MessageDeliverySettings deliverySettings = null, CancellationToken cancellationToken = default(CancellationToken))
+        internal static async Task PubSubS3Query(this IAmazonS3 s3Client, SendMessageRequest request, IMessageDeliverySettings deliverySettings = null, CancellationToken cancellationToken = default(CancellationToken))
         {
             var key = await UploadToS3(s3Client, request, deliverySettings, cancellationToken);
             request.MessageBody = "#";
@@ -33,7 +33,7 @@ namespace MhLabs.PubSubExtensions
             request.MessageAttributes.Add(Constants.PubSubKey, new Amazon.SQS.Model.MessageAttributeValue { StringValue = key, DataType = "String" });
         }
 
-        private static async Task<string> UploadToS3(IAmazonS3 s3Client, object obj, MessageDeliverySettings deliverySettings = null, CancellationToken cancellationToken = default(CancellationToken))
+        private static async Task<string> UploadToS3(IAmazonS3 s3Client, object obj, IMessageDeliverySettings deliverySettings = null, CancellationToken cancellationToken = default(CancellationToken))
         {
             deliverySettings = deliverySettings ?? new MessageDeliverySettings();
             var key = Guid.NewGuid().ToString();

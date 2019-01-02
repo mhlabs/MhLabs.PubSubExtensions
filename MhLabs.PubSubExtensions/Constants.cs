@@ -7,5 +7,6 @@ namespace MhLabs.PubSubExtensions
         internal const string PubSubKey = "PubSub_S3Key";
 
         public const string StepFunctionsName = "PubSub_StepFunctionsName";
+        public const string SuppressExecutionAlreadyExistsException = "PubSub_SuppressExecutionAlreadyExistsException";
     }
 }
