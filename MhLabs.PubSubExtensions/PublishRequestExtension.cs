@@ -52,6 +52,14 @@ namespace MhLabs.PubSubExtensions
                 StringValue = suppress.ToString()
             });
         }
+        public static void SetVersion(this PublishRequest request, string version)
+        {
+            request.MessageAttributes.Add(Constants.Version, new MessageAttributeValue
+            {
+                DataType = "String",
+                StringValue = version
+            });
+        }
 
         public static void AddMutation<T>(this PublishRequest request, T oldImage, T newImage) where T : class
         {
