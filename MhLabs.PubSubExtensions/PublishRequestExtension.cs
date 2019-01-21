@@ -1,5 +1,7 @@
 using System;
 using Amazon.SimpleNotificationService.Model;
+using MhLabs.PubSubExtensions.Model;
+using Newtonsoft.Json;
 
 namespace MhLabs.PubSubExtensions
 {
@@ -50,5 +52,15 @@ namespace MhLabs.PubSubExtensions
                 StringValue = suppress.ToString()
             });
         }
+
+        public static void AddMutation<T>(this PublishRequest request, T oldImage, T newImage) where T : class
+        {
+            var model = new MutationModel<T> {
+                OldImage = oldImage,
+                NewImage = newImage
+            };
+
+            request.Message = JsonConvert.SerializeObject(model);
+        }        
     }
 }
