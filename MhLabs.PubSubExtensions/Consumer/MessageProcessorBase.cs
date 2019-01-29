@@ -64,11 +64,13 @@ namespace MhLabs.PubSubExtensions.Consumer
             // This is ugly, but it's because SQS and SNS have different MessageAttribute references to the same data structure
             if (sqs != null)
             {
+                LambdaLogger.Log($"Starting to process {sqs.Records.Count} SQS records...");
                 foreach (var record in sqs.Records)
                 {
 
                     if (record.MessageAttributes.ContainsKey(Constants.PubSubBucket))
                     {
+                        LambdaLogger.Log($"The records message attributes contains key {Constants.PubSubBucket}");
                         var bucket = record.MessageAttributes[Constants.PubSubBucket].StringValue;
                         var key = record.MessageAttributes[Constants.PubSubKey].StringValue;
                         var s3Response = await _s3Client.GetObjectAsync(bucket, key);
@@ -77,6 +79,8 @@ namespace MhLabs.PubSubExtensions.Consumer
                         if (snsEvent != null && snsEvent.Message != null && snsEvent.MessageAttributes != null)
                         {
                             record.Body = snsEvent.Message;
+
+                            LambdaLogger.Log("Adding SNS message attributes to record");
                             foreach (var attribute in snsEvent.MessageAttributes)
                             {
                                 if (!record.MessageAttributes.ContainsKey(attribute.Key))
@@ -89,6 +93,8 @@ namespace MhLabs.PubSubExtensions.Consumer
                         {
                             var sqsEvent = JsonConvert.DeserializeObject<SendMessageRequest>(json);
                             record.Body = sqsEvent.MessageBody;
+
+                            LambdaLogger.Log("Adding SQS message attributes to record");
                             foreach (var attribute in sqsEvent.MessageAttributes)
                             {
                                 if (!record.MessageAttributes.ContainsKey(attribute.Key))
@@ -104,16 +110,20 @@ namespace MhLabs.PubSubExtensions.Consumer
 
             if (sns != null)
             {
+                LambdaLogger.Log($"Starting to process {sns.Records.Count} SNS records...");
                 foreach (var record in sns.Records)
                 {
                     if (record.Sns.MessageAttributes.ContainsKey(Constants.PubSubBucket))
                     {
+                        LambdaLogger.Log($"The records message attributes contains key {Constants.PubSubBucket}");
                         var bucket = record.Sns.MessageAttributes[Constants.PubSubBucket].Value;
                         var key = record.Sns.MessageAttributes[Constants.PubSubKey].Value;
                         var s3Response = await _s3Client.GetObjectAsync(bucket, key);
                         var json = await ReadStream(s3Response.ResponseStream);
                         var snsEvent = JsonConvert.DeserializeObject<SNSMessage>(json);
                         record.Sns.Message = snsEvent.Message;
+
+                        LambdaLogger.Log("Adding SNS message attributes to record");
                         foreach (var attribute in snsEvent.MessageAttributes)
                         {
                             if (!record.Sns.MessageAttributes.ContainsKey(attribute.Key))
