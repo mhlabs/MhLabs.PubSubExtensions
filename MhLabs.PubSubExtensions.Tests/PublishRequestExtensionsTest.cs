@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -6,8 +7,10 @@ using Amazon.S3;
 using Amazon.SimpleNotificationService.Model;
 using Amazon.StepFunctions;
 using Amazon.StepFunctions.Model;
+using MhLabs.PubSubExtensions.Model;
 using MhLabs.PubSubExtensions.Producer;
 using Moq;
+using Newtonsoft.Json;
 using Xunit;
 
 namespace MhLabs.PubSubExtensions.Tests
@@ -62,6 +65,78 @@ namespace MhLabs.PubSubExtensions.Tests
 
             // Assert
             Assert.Equal(response.HttpStatusCode, HttpStatusCode.OK);
+        }
+
+        [Fact]
+        public async Task AddMutation_Adds_Diff_MessageAttribute_Identical_Objects()
+        {
+            await Task.CompletedTask;
+            // Arrange
+            var obj1 = new TestItem();
+            var obj2 = new TestItem();
+
+            var request = new PublishRequest();
+
+            // Act
+            request.AddMutation(obj1, obj2);
+
+            // Assert
+            Assert.Equal(0, JsonConvert.DeserializeObject<List<string>>(request.MessageAttributes[Constants.UpdatedProperties].StringValue).Count);
+        }
+
+        [Fact]
+        public async Task AddMutation_Adds_Diff_MessageAttribute_Different_Objects()
+        {
+            await Task.CompletedTask;
+            // Arrange
+            var obj1 = new TestItem();
+            var obj2 = new TestItem { Name = "Test" };
+
+            var request = new PublishRequest();
+
+            // Act
+            request.AddMutation(obj1, obj2);
+
+            // Assert
+            var diff = JsonConvert.DeserializeObject<List<string>>(request.MessageAttributes[Constants.UpdatedProperties].StringValue);
+            Assert.Equal(1, diff.Count);
+            Assert.Equal("Name", diff[0]);
+        }
+
+        [Fact]
+        public async Task AddMutation_Adds_Diff_MessageAttribute_Null_OldImage()
+        {
+            await Task.CompletedTask;
+            // Arrange
+            TestItem obj1 = null;
+            var obj2 = new TestItem { Name = "Test", Age = 1, CreationDate = DateTime.Now };
+
+            var request = new PublishRequest();
+
+            // Act
+            request.AddMutation(obj1, obj2);
+
+            // Assert
+            var diff = JsonConvert.DeserializeObject<List<string>>(request.MessageAttributes[Constants.UpdatedProperties].StringValue);
+            Assert.Equal(3, diff.Count);
+        }
+
+        [Fact]
+        public async Task AddMutation_Adds_Diff_MessageAttribute_Null_NewImage()
+        {
+            await Task.CompletedTask;
+            // Arrange
+            var obj1 = new TestItem { Name = "Test", Age = 1, CreationDate = DateTime.Now };
+            TestItem obj2 = null;
+
+            var request = new PublishRequest();
+
+            // Act
+            request.AddMutation(obj1, obj2);
+
+            // Assert
+            var diff = JsonConvert.DeserializeObject<List<string>>(request.MessageAttributes[Constants.UpdatedProperties].StringValue);
+            Assert.Equal(3, diff.Count);
         }
     }
 }
