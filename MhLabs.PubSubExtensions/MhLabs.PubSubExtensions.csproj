@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <Version>1.0.10</Version>
+    <Version>1.0.11</Version>
   </PropertyGroup>
 
   <ItemGroup>
@@ -11,7 +11,7 @@
     <PackageReference Include="Amazon.Lambda.SNSEvents" Version="1.0.0" />
     <PackageReference Include="Amazon.Lambda.SQSEvents" Version="1.0.0" />
     <PackageReference Include="AWSSDK.S3" Version="3.3.24.1" />
-    <PackageReference Include="AWSSDK.SimpleNotificationService" Version="3.3.1.12" />
+    <PackageReference Include="AWSSDK.SimpleNotificationService" Version="3.3.3.17" />
     <PackageReference Include="AWSSDK.SQS" Version="3.3.3.20" />
     <PackageReference Include="AWSSDK.StepFunctions" Version="3.3.2.20" />
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />

@@ -8,5 +8,6 @@ namespace MhLabs.PubSubExtensions
         internal const string StepFunctionsName = "PubSub_StepFunctionsName";
         internal const string SuppressExecutionAlreadyExistsException = "PubSub_SuppressExecutionAlreadyExistsException";
         internal static string Version = "PubSub_Version";
+        internal static string UpdatedProperties = "PubSub_UpdatedProperties";
     }
 }

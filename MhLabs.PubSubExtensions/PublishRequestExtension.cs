@@ -61,7 +61,7 @@ namespace MhLabs.PubSubExtensions
             });
         }
 
-        public static void AddMutation<T>(this PublishRequest request, T oldImage, T newImage) where T : class
+        public static void AddMutation<T>(this PublishRequest request, T oldImage, T newImage) where T : class, new()
         {
             var model = new MutationModel<T> {
                 OldImage = oldImage,
@@ -69,6 +69,13 @@ namespace MhLabs.PubSubExtensions
             };
 
             request.Message = JsonConvert.SerializeObject(model);
+            request.MessageAttributes.Add(
+                Constants.UpdatedProperties, 
+                new MessageAttributeValue {
+                    DataType = "String.Array", 
+                    StringValue = JsonConvert.SerializeObject(model.Diff())
+                }
+            );
         }        
     }
 }
