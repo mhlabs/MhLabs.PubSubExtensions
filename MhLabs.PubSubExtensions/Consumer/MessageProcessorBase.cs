@@ -1,20 +1,18 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using Amazon;
 using Amazon.Lambda.Core;
-using Amazon.Lambda.KinesisEvents;
 using Amazon.Lambda.SNSEvents;
 using Amazon.Lambda.SQSEvents;
 using Amazon.S3;
-using Amazon.SQS;
 using Amazon.SQS.Model;
 using MhLabs.PubSubExtensions.Consumer.Extractors;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Newtonsoft.Json;
 using static Amazon.Lambda.SNSEvents.SNSEvent;
-using static Amazon.Lambda.SQSEvents.SQSEvent;
 
 namespace MhLabs.PubSubExtensions.Consumer
 {
@@ -27,6 +25,7 @@ namespace MhLabs.PubSubExtensions.Consumer
         protected abstract Task HandleEvent(IEnumerable<TMessageType> items, ILambdaContext context);
 
         private readonly IAmazonS3 _s3Client;
+        private readonly ILogger _logger;
 
         protected void RegisterExtractor(IMessageExtractor extractor)
         {
@@ -40,20 +39,48 @@ namespace MhLabs.PubSubExtensions.Consumer
             }
         }
 
-        protected MessageProcessorBase(IAmazonS3 s3Client = null)
+        protected MessageProcessorBase(IAmazonS3 s3Client = null, ILoggerFactory loggerFactory = null)
         {
             _s3Client = s3Client ?? new AmazonS3Client(RegionEndpoint.GetBySystemName(Environment.GetEnvironmentVariable("AWS_DEFAULT_REGION")));
             RegisterExtractor(new SQSMessageExtractor());
             RegisterExtractor(new SNSMessageExtractor());
             RegisterExtractor(new KinesisMessageExtractor());
+
+            _logger = loggerFactory == null ? NullLogger.Instance : loggerFactory.CreateLogger(GetType());
         }
 
         [LambdaSerializer(typeof(Amazon.Lambda.Serialization.Json.JsonSerializer))]
         public async Task Process(TEventType ev, ILambdaContext context) 
         {
-            await ExtractMessage(ev);
-            var rawData = await _messageExtractorRegister[ev.GetType()].ExtractEventBody<TEventType, TMessageType>(ev);
-            await HandleEvent(rawData, context);
+            try
+            {
+                await ExtractMessage(ev);
+                var rawData = await _messageExtractorRegister[ev.GetType()].ExtractEventBody<TEventType, TMessageType>(ev);
+                await HandleEvent(rawData, context);
+            }
+            catch (Exception exception)
+            {
+                LogError(ev, exception, context);
+                throw;
+            }
+           
+        }
+
+        private void LogError(TEventType ev, Exception exception, ILambdaContext context)
+        {
+            var payload = JsonConvert.SerializeObject(ev);
+            var eventType = ev?.GetType();
+
+            if (_logger == NullLogger.Instance)
+            {
+                context.Logger.Log($"Error when processing message type: {eventType}. Raw message: {payload}");
+            }
+            else
+            {
+                _logger.LogError(exception,
+                    "Error when processing message type: {TEventType}. Raw message: {TEvent}",
+                    eventType, payload);
+            }
         }
 
         protected virtual async Task ExtractMessage(TEventType ev)
@@ -61,6 +88,12 @@ namespace MhLabs.PubSubExtensions.Consumer
             var sqs = ev as SQSEvent;
             var sns = ev as SNSEvent;
 
+            if (sqs == null && sns == null)
+            {
+                throw new ArgumentException(
+                    $"Could not extract message to either SNS or SQS. Raw source was: {JsonConvert.SerializeObject(ev)}");
+            }
+                
             // This is ugly, but it's because SQS and SNS have different MessageAttribute references to the same data structure
             if (sqs != null)
             {
