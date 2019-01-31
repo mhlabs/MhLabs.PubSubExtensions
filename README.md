@@ -14,7 +14,7 @@ Nuget: `dotnet add package MhLabs.PubSubExtensions`
 ### Producer
 To publish to an SNS topic, register the extended client to `Startup.cs`:
 `services.AddSingleton<IAmazonSimpleNotificationService, ExtendedSimpleNotificationServiceClient>();`
- 
+
 To publish a message:
 ```
 public ProducingService(IAmazonSimpleNotificationService snsClient)
