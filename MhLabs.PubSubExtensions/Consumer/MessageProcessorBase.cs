@@ -17,7 +17,7 @@ using static Amazon.Lambda.SNSEvents.SNSEvent;
 namespace MhLabs.PubSubExtensions.Consumer
 {
 
-    public abstract class MessageProcessorBase<TEventType, TMessageType> where TMessageType : class
+    public abstract class MessageProcessorBase<TEventType, TMessageType> where TMessageType : class, new()
     {
 
         private readonly IDictionary<Type, IMessageExtractor> _messageExtractorRegister = new Dictionary<Type, IMessageExtractor>();
@@ -50,7 +50,7 @@ namespace MhLabs.PubSubExtensions.Consumer
         }
 
         [LambdaSerializer(typeof(Amazon.Lambda.Serialization.Json.JsonSerializer))]
-        public async Task Process(TEventType ev, ILambdaContext context) 
+        public async Task Process(TEventType ev, ILambdaContext context)
         {
             try
             {
@@ -63,7 +63,7 @@ namespace MhLabs.PubSubExtensions.Consumer
                 LogError(ev, exception, context);
                 throw;
             }
-           
+
         }
 
         private void LogError(TEventType ev, Exception exception, ILambdaContext context)
@@ -94,7 +94,7 @@ namespace MhLabs.PubSubExtensions.Consumer
                 // Handled by an implementation of IMessageExtractor
                 return;
             }
-                
+
             // This is ugly, but it's because SQS and SNS have different MessageAttribute references to the same data structure
             if (sqs != null)
             {
