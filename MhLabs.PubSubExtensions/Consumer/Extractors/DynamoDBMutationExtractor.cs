@@ -25,10 +25,13 @@ namespace MhLabs.PubSubExtensions.Consumer.Extractors
         {
             var dynamoEvent = ev as DynamoDBEvent;
             await Task.CompletedTask;
+            Console.WriteLine("DynamoEvent");
             return dynamoEvent.Records.Select(p =>
             {
                 var newDoc = Document.FromAttributeMap(p.Dynamodb.NewImage);
                 var oldDoc = Document.FromAttributeMap(p.Dynamodb.OldImage);
+                Console.WriteLine("NewDoc " + JsonConvert.SerializeObject(newDoc));
+                Console.WriteLine("Type " + typeof(TMessageType).Name);
                 var update = new MutationModel<TMessageType>();
                 update.OldImage = _context.FromDocument<TMessageType>(oldDoc);
                 update.NewImage = _context.FromDocument<TMessageType>(newDoc);
