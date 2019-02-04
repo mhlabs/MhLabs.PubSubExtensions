@@ -45,6 +45,7 @@ namespace MhLabs.PubSubExtensions.Consumer
             RegisterExtractor(new SQSMessageExtractor());
             RegisterExtractor(new SNSMessageExtractor());
             RegisterExtractor(new KinesisMessageExtractor());
+            RegisterExtractor(new DynamoDBMutationExtractor());
 
             _logger = loggerFactory == null ? NullLogger.Instance : loggerFactory.CreateLogger(GetType());
         }
