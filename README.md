@@ -96,7 +96,7 @@ Also add a consumer Lambda resource to consume the queue:
     "Tracing": "Active",
     "Environment": {
       "Variables": {
-        "PubSubBucket": { "Ref": "Bucket" }
+        "PubSub_S3Bucket": { "Ref": "Bucket" }
       }
     },
     "Events": {
