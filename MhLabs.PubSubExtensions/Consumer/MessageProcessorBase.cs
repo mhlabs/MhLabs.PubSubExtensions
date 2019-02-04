@@ -54,7 +54,7 @@ namespace MhLabs.PubSubExtensions.Consumer
         {
             try
             {
-                await ExtractMessage(ev);
+                await PreparePubSubMessage(ev);
                 var rawData = await _messageExtractorRegister[ev.GetType()].ExtractEventBody<TEventType, TMessageType>(ev);
                 await HandleEvent(rawData, context);
             }
@@ -83,15 +83,16 @@ namespace MhLabs.PubSubExtensions.Consumer
             }
         }
 
-        protected virtual async Task ExtractMessage(TEventType ev)
+        protected virtual async Task PreparePubSubMessage(TEventType ev)
         {
             var sqs = ev as SQSEvent;
             var sns = ev as SNSEvent;
 
             if (sqs == null && sns == null)
             {
-                throw new ArgumentException(
-                    $"Could not extract message to either SNS or SQS. Raw source was: {JsonConvert.SerializeObject(ev)}");
+                // Event was something else, such as a CloudwatchEvent or DynamoDBEvent. 
+                // Handled by an implementation of IMessageExtractor
+                return;
             }
                 
             // This is ugly, but it's because SQS and SNS have different MessageAttribute references to the same data structure
