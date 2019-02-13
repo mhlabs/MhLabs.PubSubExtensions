@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using AutoFixture;
 using MhLabs.PubSubExtensions.Model;
+using Newtonsoft.Json;
 using Xunit;
 
 namespace MhLabs.PubSubExtensions.Tests
@@ -307,17 +308,51 @@ namespace MhLabs.PubSubExtensions.Tests
             Assert.True(diff.Any(p => p == "MinisDictionary.Message"));
 
         }
+
+        [Fact]
+        public void SpecialTest()
+        {
+            var fixture = new Fixture();
+            var item = fixture.Create<TestItem>();
+            var json = JsonConvert.SerializeObject(item);
+            var item2 = JsonConvert.DeserializeObject<TestItem>(json);
+            
+            item2.TestEnum = TestEnum.Three;
+            item2.TestDynamic = fixture.Create<TestAddress>();
+
+            var model = new MutationModel<TestItem> { OldImage = item, NewImage = item2 };
+            var diff = model.Diff();
+            Assert.Equal(3, diff.Count);
+            Assert.True(diff.Any(p => p == "TestEnum"));
+            Assert.True(diff.Any(p => p == "TestDynamic"));
+
+        }
     }
 
 
     internal class TestItem
     {
+        public dynamic TestDynamic { get; set; }
+        public TestEnum TestEnum { get; set; }
         public string Name { get; set; }
         public int Age { get; set; }
         public DateTime CreationDate { get; set; }
         public TestAddress Address { get; set; }
         public List<TestMiniItem> Minis { get; set; }
         public Dictionary<string, TestMiniItem> MinisDictionary { get; set; }
+    }
+
+    internal enum TestEnum
+    {
+        One,
+        Two,
+        Three
+    }
+
+    internal struct TestStruct
+    {
+        public string Id { get; set; }
+        public string Message { get; set; }
     }
 
     internal class TestMiniItem
