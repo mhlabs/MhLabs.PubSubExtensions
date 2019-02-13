@@ -310,7 +310,7 @@ namespace MhLabs.PubSubExtensions.Tests
         }
 
         [Fact]
-        public void SpecialTest()
+        public void EnumTest()
         {
             var fixture = new Fixture();
             var item = fixture.Create<TestItem>();
@@ -318,21 +318,39 @@ namespace MhLabs.PubSubExtensions.Tests
             var item2 = JsonConvert.DeserializeObject<TestItem>(json);
             
             item2.TestEnum = TestEnum.Three;
-            item2.TestDynamic = fixture.Create<TestAddress>();
 
             var model = new MutationModel<TestItem> { OldImage = item, NewImage = item2 };
             var diff = model.Diff();
-            Assert.Equal(3, diff.Count);
+            Assert.Equal(1, diff.Count);
             Assert.True(diff.Any(p => p == "TestEnum"));
-            Assert.True(diff.Any(p => p == "TestDynamic"));
+
+        }
+
+        [Fact(Skip = "See issue https://github.com/mhlabs/MhLabs.PubSubExtensions/issues/4")]
+        public void DynamicTest()
+        {
+            var fixture = new Fixture();
+            var item = fixture.Create<TestItemDynamic>();
+            var json = JsonConvert.SerializeObject(item);
+            var item2 = JsonConvert.DeserializeObject<TestItemDynamic>(json);
+
+            item2.DynamicItem = fixture.Create<TestAddress>();
+
+            var model = new MutationModel<TestItemDynamic> { OldImage = item, NewImage = item2 };
+            var diff = model.Diff();
+            Assert.Equal(3, diff.Count);
+            Assert.True(diff.Any(p => p == "DynamicItem"));
 
         }
     }
 
+    internal class TestItemDynamic
+    {
+        public dynamic DynamicItem { get; set; }
+    }
 
     internal class TestItem
     {
-        public dynamic TestDynamic { get; set; }
         public TestEnum TestEnum { get; set; }
         public string Name { get; set; }
         public int Age { get; set; }

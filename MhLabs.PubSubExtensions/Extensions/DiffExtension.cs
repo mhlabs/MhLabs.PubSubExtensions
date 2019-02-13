@@ -10,8 +10,8 @@ static class DiffExtension
     {
         List<string> variances = new List<string>();
         var nullSafeValue = (val1 ?? val2);
-        var pi = nullSafeValue.GetType().GetProperties().Where(x => !x.GetIndexParameters().Any());
-        foreach (var p in pi)
+        var propertyInfos = nullSafeValue.GetType().GetProperties().Where(x => x.DeclaringType == nullSafeValue.GetType() && !x.GetIndexParameters().Any());
+        foreach (var p in propertyInfos)
         {
             var value1 = val1 != null ? p.GetValue(val1) : null;
             var value2 = val2 != null ? p.GetValue(val2) : null;
