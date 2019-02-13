@@ -148,6 +148,8 @@ namespace MhLabs.PubSubExtensions.Tests
             Assert.True(diff.Any(p => p == "Minis.Message"));
         }
 
+
+
         [Fact]
         public void NestedListNullToLeft()
         {
@@ -319,6 +321,13 @@ namespace MhLabs.PubSubExtensions.Tests
     }
 
     internal class TestMiniItem
+    {
+        public string Id { get; set; }
+        public string Message { get; set; }
+        public TestExtraMiniItem[] ExtraMinis { get; set; }
+    }
+
+    internal class TestExtraMiniItem
     {
         public string Id { get; set; }
         public string Message { get; set; }
