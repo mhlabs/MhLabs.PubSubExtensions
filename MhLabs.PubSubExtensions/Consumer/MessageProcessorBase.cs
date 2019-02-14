@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using Amazon;
+using Amazon.DynamoDBv2;
 using Amazon.Lambda.Core;
 using Amazon.Lambda.SNSEvents;
 using Amazon.Lambda.SQSEvents;
@@ -39,12 +40,13 @@ namespace MhLabs.PubSubExtensions.Consumer
             }
         }
 
-        protected MessageProcessorBase(IAmazonS3 s3Client = null, ILoggerFactory loggerFactory = null)
+        protected MessageProcessorBase(IAmazonS3 s3Client = null, IAmazonDynamoDB dynamoDbClient = null,  ILoggerFactory loggerFactory = null)
         {
             _s3Client = s3Client ?? new AmazonS3Client(RegionEndpoint.GetBySystemName(Environment.GetEnvironmentVariable("AWS_DEFAULT_REGION")));
             RegisterExtractor(new SQSMessageExtractor());
             RegisterExtractor(new SNSMessageExtractor());
             RegisterExtractor(new KinesisMessageExtractor());
+            RegisterExtractor(new DynamoDBExtractor(dynamoDbClient));
 
             _logger = loggerFactory == null ? NullLogger.Instance : loggerFactory.CreateLogger(GetType());
         }
