@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.DataModel;
@@ -12,11 +13,11 @@ namespace MhLabs.PubSubExtensions.Consumer.Extractors
 {
     public class DynamoDBExtractor : IMessageExtractor
     {
-        private readonly IDynamoDBContext _context;
+        private readonly IAmazonDynamoDB _dynamoDb;
 
-        public DynamoDBExtractor(IAmazonDynamoDB dynamoDbService)
+        public DynamoDBExtractor(IAmazonDynamoDB dynamoDb)
         {
-            _context = new DynamoDBContext(dynamoDbService);
+            _dynamoDb = dynamoDb;
         }
 
         public Type ExtractorForType => typeof(DynamoDBEvent);
@@ -24,19 +25,23 @@ namespace MhLabs.PubSubExtensions.Consumer.Extractors
         {
             var dynamoEvent = ev as DynamoDBEvent;
             await Task.CompletedTask;
-            return dynamoEvent.Records.Select(p =>
+
+            using (var context = new DynamoDBContext(_dynamoDb))
             {
-                var newDoc = Document.FromAttributeMap(p.Dynamodb.NewImage);
-                var oldDoc = Document.FromAttributeMap(p.Dynamodb.OldImage);
-
-                var update = new MutationModel<TMessageType>
+                return dynamoEvent.Records.Select(record =>
                 {
-                    OldImage = _context.FromDocument<TMessageType>(oldDoc),
-                    NewImage = _context.FromDocument<TMessageType>(newDoc)
-                };
+                    var newDoc = Document.FromAttributeMap(record.Dynamodb.NewImage);
+                    var oldDoc = Document.FromAttributeMap(record.Dynamodb.OldImage);
 
-                return update as TMessageType;
-            });
+                    var update = new MutationModel<TMessageType>
+                    {
+                        OldImage = context.FromDocument<TMessageType>(oldDoc),
+                        NewImage = context.FromDocument<TMessageType>(newDoc)
+                    };
+
+                    return update as TMessageType;
+                });
+            }
         }
     }
 }
