@@ -42,11 +42,15 @@ namespace MhLabs.PubSubExtensions.Consumer
 
         protected MessageProcessorBase(IAmazonS3 s3Client = null, IAmazonDynamoDB dynamoDbClient = null,  ILoggerFactory loggerFactory = null)
         {
-            _s3Client = s3Client ?? new AmazonS3Client(RegionEndpoint.GetBySystemName(Environment.GetEnvironmentVariable("AWS_DEFAULT_REGION")));
+            var awsRegion = RegionEndpoint.GetBySystemName(Environment.GetEnvironmentVariable("AWS_DEFAULT_REGION"));
+
+            _s3Client = s3Client ?? new AmazonS3Client(awsRegion);
+            var _dynamoDbClient = dynamoDbClient ?? new AmazonDynamoDBClient(awsRegion);
+
             RegisterExtractor(new SQSMessageExtractor());
             RegisterExtractor(new SNSMessageExtractor());
             RegisterExtractor(new KinesisMessageExtractor());
-            RegisterExtractor(new DynamoDBExtractor(dynamoDbClient));
+            RegisterExtractor(new DynamoDBExtractor(_dynamoDbClient));
 
             _logger = loggerFactory == null ? NullLogger.Instance : loggerFactory.CreateLogger(GetType());
         }
