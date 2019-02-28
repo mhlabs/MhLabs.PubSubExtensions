@@ -82,6 +82,8 @@ public static class DiffExtension
           || type.IsEnum
           || type.Equals(typeof(string))
           || type.Equals(typeof(decimal))
-          || type.Equals(typeof(DateTime));
+          || type.Equals(typeof(decimal?))
+          || type.Equals(typeof(DateTime))
+          || type.Equals(typeof(DateTime?));
     }
 }

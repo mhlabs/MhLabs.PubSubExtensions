@@ -324,6 +324,16 @@ namespace MhLabs.PubSubExtensions.Tests
             Assert.Equal(1, diff.Count);
             Assert.True(diff.Any(p => p == "TestEnum"));
         }
+        [Fact]
+        public void DateTimeTest()
+        {
+            var fixture = new Fixture();
+            var item = fixture.Create<TestDateTime>();
+            var item2 = fixture.Create<TestDateTime>();
+            var model = new MutationModel<TestDateTime> { OldImage = item, NewImage = item2 };
+            var diff = model.Diff();
+            Assert.Equal(2, diff.Count);            
+        }
 
         [Fact(Skip = "See issue https://github.com/mhlabs/MhLabs.PubSubExtensions/issues/6")]
         public void EnumListTest()
@@ -408,6 +418,12 @@ namespace MhLabs.PubSubExtensions.Tests
     public class TestAddress
     {
         public string AddressRow1 { get; set; }
+    }    
+    
+    public class TestDateTime
+    {
+        public DateTime DateTime { get; set; }
+        public DateTime? NullableDateTime { get; set; }
     }
 
 }
