@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
-static class DiffExtension
+public static class DiffExtension
 {
     public static List<string> PropertyDiff<T>(this T val1, T val2, string prefix = null, bool indexed = false) where T : class, new()
     {
