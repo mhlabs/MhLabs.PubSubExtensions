@@ -118,7 +118,7 @@ namespace MhLabs.PubSubExtensions.Tests
 
             // Assert
             var diff = JsonConvert.DeserializeObject<List<string>>(request.MessageAttributes[Constants.UpdatedProperties].StringValue);
-            Assert.Equal(3, diff.Count);
+            Assert.Equal(4, diff.Count);
         }
 
         [Fact]
@@ -136,7 +136,7 @@ namespace MhLabs.PubSubExtensions.Tests
 
             // Assert
             var diff = JsonConvert.DeserializeObject<List<string>>(request.MessageAttributes[Constants.UpdatedProperties].StringValue);
-            Assert.Equal(3, diff.Count);
+            Assert.Equal(4, diff.Count);
         }
     }
 }
