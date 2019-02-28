@@ -323,6 +323,24 @@ namespace MhLabs.PubSubExtensions.Tests
             var diff = model.Diff();
             Assert.Equal(1, diff.Count);
             Assert.True(diff.Any(p => p == "TestEnum"));
+        }
+
+        [Fact(Skip = "See issue https://github.com/mhlabs/MhLabs.PubSubExtensions/issues/6")]
+        public void EnumListTest()
+        {
+            var fixture = new Fixture();
+            var item = fixture.Create<TestItem>();
+            item.Enums = fixture.Create<List<TestEnum>>();
+
+            var json = JsonConvert.SerializeObject(item);
+            var item2 = JsonConvert.DeserializeObject<TestItem>(json);
+            
+            item2.Enums = fixture.Create<List<TestEnum>>();
+
+            var model = new MutationModel<TestItem> { OldImage = item, NewImage = item2 };
+            var diff = model.Diff();
+            Assert.Equal(1, diff.Count);
+            Assert.True(diff.Any(p => p == "TestEnum"));
 
         }
 
@@ -357,6 +375,7 @@ namespace MhLabs.PubSubExtensions.Tests
         public DateTime CreationDate { get; set; }
         public TestAddress Address { get; set; }
         public List<TestMiniItem> Minis { get; set; }
+        public List<TestEnum> Enums { get; set; }
         public Dictionary<string, TestMiniItem> MinisDictionary { get; set; }
     }
 

@@ -50,13 +50,17 @@ public static class DiffExtension
             }
             else
             {
-                var enum1 = (IEnumerable<object>)val1;
-                var enum2 = (IEnumerable<object>)val2;
-                for (var i = 0; i < (enum1 ?? enum2).Count(); i++)
+                var indexType = nullSafeValue.GetType().GetProperty("Item").PropertyType;
+                if (!indexType.IsEnum)
                 {
-                    var obj1 = enum1 != null ? enum1.ElementAtOrDefault(i) : null;
-                    var obj2 = enum2 != null ? enum2.ElementAtOrDefault(i) : null;
-                    return obj1.PropertyDiff(obj2, prefix);
+                    var enum1 = (IEnumerable<object>)val1;
+                    var enum2 = (IEnumerable<object>)val2;
+                    for (var i = 0; i < (enum1 ?? enum2).Count(); i++)
+                    {
+                        var obj1 = enum1 != null ? enum1.ElementAtOrDefault(i) : null;
+                        var obj2 = enum2 != null ? enum2.ElementAtOrDefault(i) : null;
+                        return obj1.PropertyDiff(obj2, prefix);
+                    }
                 }
             }
         }
