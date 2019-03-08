@@ -44,13 +44,24 @@ public static class DiffExtension
                 {
                     var obj1 = dict1 != null && dict1.Contains(key) ? dict1[key] : null;
                     var obj2 = dict2 != null && dict2.Contains(key) ? dict2[key] : null;
-                    return obj1.PropertyDiff(obj2, prefix);
+                    var objDiff = obj1.PropertyDiff(obj2, prefix);
+                    return objDiff;
                 }
 
             }
             else
             {
-                var indexType = nullSafeValue.GetType().GetProperty("Item").PropertyType;
+                var type = nullSafeValue.GetType();
+                var indexType = type.GetProperty("Item") != null
+                    ? type.GetProperty("Item").PropertyType
+                    : type;
+
+                if (type == typeof(string))
+                {
+                    // TODO: string in array, no way no know attribute name, position etc. with current structure
+                    return new List<string>();
+                }
+
                 if (!indexType.IsEnum)
                 {
                     var enum1 = (IEnumerable<object>)val1;
@@ -59,7 +70,8 @@ public static class DiffExtension
                     {
                         var obj1 = enum1 != null ? enum1.ElementAtOrDefault(i) : null;
                         var obj2 = enum2 != null ? enum2.ElementAtOrDefault(i) : null;
-                        return obj1.PropertyDiff(obj2, prefix);
+                        var enumDiff = obj1.PropertyDiff(obj2, prefix);
+                        return enumDiff;
                     }
                 }
             }
