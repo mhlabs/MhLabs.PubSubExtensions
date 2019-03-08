@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Amazon.SimpleNotificationService.Model;
 using MhLabs.PubSubExtensions.Model;
 using Newtonsoft.Json;
@@ -7,17 +8,21 @@ namespace MhLabs.PubSubExtensions
 {
     public static class PublishRequestExtension
     {
-        public static void DelaySeconds(this PublishRequest request, int seconds) {
-            request.MessageAttributes.Add(Constants.DelaySeconds, new MessageAttributeValue {DataType = "String", StringValue = seconds.ToString()});
+        public static void DelaySeconds(this PublishRequest request, int seconds)
+        {
+            request.MessageAttributes.Add(Constants.DelaySeconds, new MessageAttributeValue { DataType = "String", StringValue = seconds.ToString() });
         }
-        public static void DelayMinutes(this PublishRequest request, int minutes) {
-            request.MessageAttributes.Add(Constants.DelaySeconds, new MessageAttributeValue {DataType = "String", StringValue = (minutes * 60).ToString()});
+        public static void DelayMinutes(this PublishRequest request, int minutes)
+        {
+            request.MessageAttributes.Add(Constants.DelaySeconds, new MessageAttributeValue { DataType = "String", StringValue = (minutes * 60).ToString() });
         }
-        public static void DelayHours(this PublishRequest request, int hours) {
-            request.MessageAttributes.Add(Constants.DelaySeconds, new MessageAttributeValue {DataType = "String", StringValue = (hours * 60 * 60).ToString()});
+        public static void DelayHours(this PublishRequest request, int hours)
+        {
+            request.MessageAttributes.Add(Constants.DelaySeconds, new MessageAttributeValue { DataType = "String", StringValue = (hours * 60 * 60).ToString() });
         }
-        public static void DelayDays(this PublishRequest request, int days) {
-            request.MessageAttributes.Add(Constants.DelaySeconds, new MessageAttributeValue {DataType = "String", StringValue = (days * 24 * 60 * 60).ToString()});
+        public static void DelayDays(this PublishRequest request, int days)
+        {
+            request.MessageAttributes.Add(Constants.DelaySeconds, new MessageAttributeValue { DataType = "String", StringValue = (days * 24 * 60 * 60).ToString() });
         }
 
         public static void SetExecutionName(this PublishRequest request, string name)
@@ -28,7 +33,7 @@ namespace MhLabs.PubSubExtensions
             if (name.Length > 80)
                 throw new ArgumentException("Execution Name cannot be longer than 80 characters");
 
-            request.MessageAttributes.Add(Constants.StepFunctionsName, new MessageAttributeValue {DataType = "String", StringValue = name});
+            request.MessageAttributes.Add(Constants.StepFunctionsName, new MessageAttributeValue { DataType = "String", StringValue = name });
         }
 
         internal static string GetExecutionName(this PublishRequest request)
@@ -40,7 +45,7 @@ namespace MhLabs.PubSubExtensions
 
         internal static bool ShouldSuppressExecutionAlreadyExistsException(this PublishRequest request)
         {
-            return request.MessageAttributes.ContainsKey(Constants.SuppressExecutionAlreadyExistsException) && 
+            return request.MessageAttributes.ContainsKey(Constants.SuppressExecutionAlreadyExistsException) &&
                    request.MessageAttributes[Constants.SuppressExecutionAlreadyExistsException].StringValue == true.ToString();
         }
 
@@ -63,19 +68,24 @@ namespace MhLabs.PubSubExtensions
 
         public static void AddMutation<T>(this PublishRequest request, T oldImage, T newImage) where T : class, new()
         {
-            var model = new MutationModel<T> {
+            var model = new MutationModel<T>
+            {
                 OldImage = oldImage,
                 NewImage = newImage
             };
 
             request.Message = JsonConvert.SerializeObject(model);
+
+            var diff = model.Diff();
+
             request.MessageAttributes.Add(
-                Constants.UpdatedProperties, 
-                new MessageAttributeValue {
-                    DataType = "String.Array", 
-                    StringValue = JsonConvert.SerializeObject(model.Diff())
+                Constants.UpdatedProperties,
+                new MessageAttributeValue
+                {
+                    DataType = "String.Array",
+                    StringValue = JsonConvert.SerializeObject(diff)
                 }
             );
-        }        
+        }
     }
 }
