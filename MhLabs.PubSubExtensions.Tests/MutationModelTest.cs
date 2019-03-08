@@ -370,6 +370,21 @@ namespace MhLabs.PubSubExtensions.Tests
             Assert.True(diff.Any(p => p == "DynamicItem"));
 
         }
+
+        [Fact(Skip = ("See issue https://github.com/mhlabs/MhLabs.PubSubExtensions/issues/8"))]
+        public void StringArrayTest()
+        {
+            var fixture = new Fixture();
+            var item = fixture.Create<TestItemWithStringArray>();
+
+            var json = JsonConvert.SerializeObject(item);
+            var item2 = JsonConvert.DeserializeObject<TestItemWithStringArray>(json);
+
+            var model = new MutationModel<TestItemWithStringArray> { OldImage = item, NewImage = item2 };
+            var diff = model.Diff();
+
+            Assert.Equal(0, diff.Count);
+        }
     }
 
     internal class TestItemDynamic
@@ -387,6 +402,11 @@ namespace MhLabs.PubSubExtensions.Tests
         public List<TestMiniItem> Minis { get; set; }
         public List<TestEnum> Enums { get; set; }
         public Dictionary<string, TestMiniItem> MinisDictionary { get; set; }
+    }
+
+    internal class TestItemWithStringArray
+    {
+        public List<string> Strings { get; set; } = new List<string>();
     }
 
     internal enum TestEnum
