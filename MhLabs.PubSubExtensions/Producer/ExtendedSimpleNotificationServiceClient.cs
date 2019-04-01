@@ -37,6 +37,9 @@ namespace MhLabs.PubSubExtensions.Producer
 
         public override async Task<PublishResponse> PublishAsync(PublishRequest request, CancellationToken cancellationToken = default(CancellationToken))
         {
+            if (string.IsNullOrEmpty(request.Subject)) {
+                request.Subject = "#"; // To allow for automatic http forwarding
+            }
             if (request.MessageAttributes.ContainsKey(Constants.DelaySeconds) && int.Parse(request.MessageAttributes[Constants.DelaySeconds].StringValue) > 0)
             {
                 if (BytesHelper.TooLarge(request, 32000))
