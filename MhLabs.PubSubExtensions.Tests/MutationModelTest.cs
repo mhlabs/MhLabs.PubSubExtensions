@@ -199,6 +199,27 @@ namespace MhLabs.PubSubExtensions.Tests
         }
 
         [Fact]
+        public void NestedListObjectNullToRight()
+        {
+            var obj1 = new TestItem { Name = "Test", Age = 10, CreationDate = DateTime.Today, Address = new TestAddress { AddressRow1 = "B" } };
+            
+            var fixture = new Fixture();
+            obj1.Enums = new List<TestEnum>() {
+                TestEnum.One,
+                TestEnum.Two,
+                TestEnum.Three
+            };
+            
+            var model = new MutationModel<TestItem> { OldImage = obj1, NewImage = null };
+            var diff = model.Diff();
+            Assert.Equal(7, diff.Count);
+            Assert.True(diff.Any(p => p == "Address"));
+            Assert.True(diff.Any(p => p == "Address.AddressRow1"));
+            Assert.True(diff.Any(p => p == "Enums"));
+        }
+
+
+        [Fact]
         public void NestedDictionaryNotChanged()
         {
             var obj1 = new TestItem { Name = "Test", Age = 10, CreationDate = DateTime.Today, Address = new TestAddress { AddressRow1 = "B" } };
@@ -335,7 +356,7 @@ namespace MhLabs.PubSubExtensions.Tests
             Assert.Equal(2, diff.Count);            
         }
 
-        [Fact(Skip = "See issue https://github.com/mhlabs/MhLabs.PubSubExtensions/issues/6")]
+        [Fact]
         public void EnumListTest()
         {
             var fixture = new Fixture();
@@ -345,13 +366,100 @@ namespace MhLabs.PubSubExtensions.Tests
             var json = JsonConvert.SerializeObject(item);
             var item2 = JsonConvert.DeserializeObject<TestItem>(json);
             
-            item2.Enums = fixture.Create<List<TestEnum>>();
+            item2.Enums.Reverse();
 
             var model = new MutationModel<TestItem> { OldImage = item, NewImage = item2 };
             var diff = model.Diff();
             Assert.Equal(1, diff.Count);
-            Assert.True(diff.Any(p => p == "TestEnum"));
+            Assert.True(diff.Any(p => p == "Enums"));
+        }
 
+        [Fact]
+        public void IntListTest_RightSideNullShouldDiff()
+        {
+            var fixture = new Fixture();
+            var item = fixture.Create<TestItem>();
+            item.IntList = fixture.Create<List<int>>();
+
+            var model = new MutationModel<TestItem> { OldImage = item, NewImage = null };
+            var diff = model.Diff();
+            Assert.True(diff.Any(p => p == "IntList"));
+        }
+
+        [Fact]
+        public void IntListTest_ShouldNotDiff()
+        {
+            var fixture = new Fixture();
+            var item = fixture.Create<TestItem>();
+            item.IntList = fixture.Create<List<int>>();
+
+            var json = JsonConvert.SerializeObject(item);
+            var item2 = JsonConvert.DeserializeObject<TestItem>(json);
+
+            var model = new MutationModel<TestItem> { OldImage = item, NewImage = item2 };
+            var diff = model.Diff();
+            Assert.False(diff.Any(p => p == "IntList"));
+        }
+
+        [Fact]
+        public void IntListTest_ShouldDiff()
+        {
+            var fixture = new Fixture();
+            var item = fixture.Create<TestItem>();
+            item.IntList = fixture.Create<List<int>>();
+
+            var json = JsonConvert.SerializeObject(item);
+            var item2 = JsonConvert.DeserializeObject<TestItem>(json);
+            item2.IntList = fixture.Create<List<int>>();
+
+            var model = new MutationModel<TestItem> { OldImage = item, NewImage = item2 };
+            var diff = model.Diff();
+            Assert.Equal(1, diff.Count);
+            Assert.True(diff.Any(p => p == "IntList"));
+        }
+
+        [Fact]
+        public void DoubleListTest_RightSideNullShouldDiff()
+        {
+            var fixture = new Fixture();
+            var item = fixture.Create<TestItem>();
+            item.DoubleList = fixture.Create<List<double>>();
+
+            var model = new MutationModel<TestItem> { OldImage = item, NewImage = null };
+            var diff = model.Diff();
+            Assert.True(diff.Any(p => p == "DoubleList"));
+        }
+
+        [Fact]
+        public void DoubleListTest_ShouldNotDiff()
+        {
+            var fixture = new Fixture();
+            var item = fixture.Create<TestItem>();
+            item.DoubleList = fixture.Create<List<double>>();
+
+            var json = JsonConvert.SerializeObject(item);
+            var item2 = JsonConvert.DeserializeObject<TestItem>(json);
+
+            var model = new MutationModel<TestItem> { OldImage = item, NewImage = item2 };
+            var diff = model.Diff();
+            Assert.False(diff.Any(p => p == "DoubleList"));
+        }
+
+        [Fact]
+        public void DoubleListTest_ShouldDiff()
+        {
+            var fixture = new Fixture();
+            var item = fixture.Create<TestItem>();
+            item.DoubleList = fixture.Create<List<double>>();
+
+            var json = JsonConvert.SerializeObject(item);
+            var item2 = JsonConvert.DeserializeObject<TestItem>(json);
+            item2.DoubleList = fixture.Create<List<double>>();
+
+            var model = new MutationModel<TestItem> { OldImage = item, NewImage = item2 };
+            var diff = model.Diff();
+            Assert.Equal(1, diff.Count);
+            Assert.True(diff.Any(p => p == "DoubleList"));
         }
 
         [Fact(Skip = "See issue https://github.com/mhlabs/MhLabs.PubSubExtensions/issues/4")]
@@ -398,9 +506,13 @@ namespace MhLabs.PubSubExtensions.Tests
         public string Name { get; set; }
         public int Age { get; set; }
         public DateTime CreationDate { get; set; }
+        public DateTime? RemovedDate { get; set; }
         public TestAddress Address { get; set; }
         public List<TestMiniItem> Minis { get; set; }
         public List<TestEnum> Enums { get; set; }
+        public List<int> IntList { get; set; }
+        public List<double> DoubleList { get; set; }
+        public List<DateTime> DateTimeList { get; set; }
         public Dictionary<string, TestMiniItem> MinisDictionary { get; set; }
     }
 
