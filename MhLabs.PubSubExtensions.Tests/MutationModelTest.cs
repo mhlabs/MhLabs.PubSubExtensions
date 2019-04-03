@@ -462,6 +462,50 @@ namespace MhLabs.PubSubExtensions.Tests
             Assert.True(diff.Any(p => p == "DoubleList"));
         }
 
+        [Fact]
+        public void DateTimeListTest_RightSideNullShouldDiff()
+        {
+            var fixture = new Fixture();
+            var item = fixture.Create<TestItem>();
+            item.DateTimeList = fixture.Create<List<DateTime>>();
+
+            var model = new MutationModel<TestItem> { OldImage = item, NewImage = null };
+            var diff = model.Diff();
+            Assert.True(diff.Any(p => p == "DateTimeList"));
+        }
+
+        [Fact]
+        public void DateTimeListTest_ShouldNotDiff()
+        {
+            var fixture = new Fixture();
+            var item = fixture.Create<TestItem>();
+            item.DateTimeList = fixture.Create<List<DateTime>>();
+
+            var json = JsonConvert.SerializeObject(item);
+            var item2 = JsonConvert.DeserializeObject<TestItem>(json);
+
+            var model = new MutationModel<TestItem> { OldImage = item, NewImage = item2 };
+            var diff = model.Diff();
+            Assert.False(diff.Any(p => p == "DateTimeList"));
+        }
+
+        [Fact]
+        public void DateTimeListTest_ShouldDiff()
+        {
+            var fixture = new Fixture();
+            var item = fixture.Create<TestItem>();
+            item.DateTimeList = fixture.Create<List<DateTime>>();
+
+            var json = JsonConvert.SerializeObject(item);
+            var item2 = JsonConvert.DeserializeObject<TestItem>(json);
+            item2.DateTimeList = fixture.Create<List<DateTime>>();
+
+            var model = new MutationModel<TestItem> { OldImage = item, NewImage = item2 };
+            var diff = model.Diff();
+            Assert.Equal(1, diff.Count);
+            Assert.True(diff.Any(p => p == "DateTimeList"));
+        }
+
         [Fact(Skip = "See issue https://github.com/mhlabs/MhLabs.PubSubExtensions/issues/4")]
         public void DynamicTest()
         {
