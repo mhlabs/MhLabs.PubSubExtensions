@@ -76,7 +76,7 @@ public static class DiffExtension
                 }
                 else
                 {  
-                    if(val2 == null)
+                    if(val1 == null ^ val2 == null)
                     {
                         return new List<string>() { prefix };
                     }
