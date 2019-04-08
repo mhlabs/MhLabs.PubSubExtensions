@@ -22,7 +22,7 @@ public static class DiffExtension
                 {
                     var count = variances.Count;
                     variances.AddRange(value1.PropertyDiff(value2, fullName).Select(q => prefix + q));
-                    if (variances.Count > count)
+                    if (variances.Count > count && !variances.Contains(fullName))
                     {
                         variances.Add(fullName);
                     }
@@ -61,9 +61,9 @@ public static class DiffExtension
                     // TODO: string in array, no way no know attribute name, position etc. with current structure
                     return new List<string>();
                 }
-
-                if (!indexType.IsEnum)
-                {
+                
+                if (!IsSimple(indexType))
+                {   
                     var enum1 = (IEnumerable<object>)val1;
                     var enum2 = (IEnumerable<object>)val2;
                     for (var i = 0; i < (enum1 ?? enum2).Count(); i++)
@@ -72,6 +72,23 @@ public static class DiffExtension
                         var obj2 = enum2 != null ? enum2.ElementAtOrDefault(i) : null;
                         var enumDiff = obj1.PropertyDiff(obj2, prefix);
                         return enumDiff;
+                    }
+                }
+                else
+                {  
+                    if(val2 == null)
+                    {
+                        return new List<string>() { prefix };
+                    }
+
+                    var enum1 = (IList)val1;
+                    var enum2 = (IList)val2;
+                    for (var i = 0; i < (enum1 ?? enum2).Count; i++)
+                    {
+                        var obj1 = enum1[i];
+                        var obj2 = enum2[i];
+                        if(!obj1.Equals(obj2))
+                            return new List<string>() {prefix};
                     }
                 }
             }
