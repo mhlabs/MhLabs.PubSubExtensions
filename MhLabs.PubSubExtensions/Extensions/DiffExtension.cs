@@ -61,9 +61,9 @@ public static class DiffExtension
                     // TODO: string in array, no way no know attribute name, position etc. with current structure
                     return new List<string>();
                 }
-                
+
                 if (!IsSimple(indexType))
-                {   
+                {
                     var enum1 = (IEnumerable<object>)val1;
                     var enum2 = (IEnumerable<object>)val2;
                     for (var i = 0; i < (enum1 ?? enum2).Count(); i++)
@@ -75,8 +75,8 @@ public static class DiffExtension
                     }
                 }
                 else
-                {  
-                    if(val1 == null ^ val2 == null)
+                {
+                    if (val1 == null ^ val2 == null)
                     {
                         return new List<string>() { prefix };
                     }
@@ -85,10 +85,20 @@ public static class DiffExtension
                     var enum2 = (IList)val2;
                     for (var i = 0; i < (enum1 ?? enum2).Count; i++)
                     {
-                        var obj1 = enum1[i];
-                        var obj2 = enum2[i];
-                        if(!obj1.Equals(obj2))
-                            return new List<string>() {prefix};
+                        try
+                        {
+                            var obj1 = enum1[i];
+                            var obj2 = enum2[i];
+                            if (!obj1.Equals(obj2))
+                            {
+                                return new List<string>() { prefix };
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine(ex.Message + " " +  ex.StackTrace);
+                            return new List<string>();
+                        }
                     }
                 }
             }
