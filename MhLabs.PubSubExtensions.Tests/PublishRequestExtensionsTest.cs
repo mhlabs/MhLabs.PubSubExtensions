@@ -138,5 +138,58 @@ namespace MhLabs.PubSubExtensions.Tests
             var diff = JsonConvert.DeserializeObject<List<string>>(request.MessageAttributes[Constants.UpdatedProperties].StringValue);
             Assert.Equal(4, diff.Count);
         }
+
+        [Fact]
+        public void AddMutation_Adds_EventType()
+        {
+            // Arrange
+            var obj1 = new TestItem { Name = "Test", Age = 1, CreationDate = DateTime.Now };
+            var obj2 = new TestItem { Name = "Test", Age = 2, CreationDate = DateTime.Now };
+            var eventType = "order-service.order";
+
+            var request = new PublishRequest();
+
+            // Act
+            request.AddMutation(obj1, obj2, eventType);
+
+            // Assert
+            var model = JsonConvert.DeserializeObject<MutationModel<TestItem>>(request.Message);
+            Assert.Equal(eventType, model.EventType);
+        }
+
+        [Fact]
+        public void AddMutation_Adds_EventId()
+        {
+            // Arrange
+            var obj1 = new TestItem { Name = "Test", Age = 1, CreationDate = DateTime.Now };
+            var obj2 = new TestItem { Name = "Test", Age = 2, CreationDate = DateTime.Now };
+
+            var request = new PublishRequest();
+
+            // Act
+            request.AddMutation(obj1, obj2);
+
+            // Assert
+            var model = JsonConvert.DeserializeObject<MutationModel<TestItem>>(request.Message);
+            Assert.True(Guid.Parse(model.EventId) != default(Guid));
+        }
+
+        [Fact]
+        public void AddMutation_Adds_Published()
+        {
+            // Arrange
+            var obj1 = new TestItem { Name = "Test", Age = 1, CreationDate = DateTime.Now };
+            var obj2 = new TestItem { Name = "Test", Age = 2, CreationDate = DateTime.Now };
+
+            var request = new PublishRequest();
+
+            // Act
+            request.AddMutation(obj1, obj2);
+
+            // Assert
+            var model = JsonConvert.DeserializeObject<MutationModel<TestItem>>(request.Message);
+            Assert.True(DateTime.UtcNow >= model.Published);
+            Assert.True(model.Published != default(DateTime));
+        }
     }
 }
