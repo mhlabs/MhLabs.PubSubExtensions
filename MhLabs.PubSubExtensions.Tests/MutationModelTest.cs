@@ -523,7 +523,7 @@ namespace MhLabs.PubSubExtensions.Tests
 
         }
 
-        [Fact(Skip = ("See issue https://github.com/mhlabs/MhLabs.PubSubExtensions/issues/8"))]
+        [Fact]
         public void StringArrayTest()
         {
             var fixture = new Fixture();
