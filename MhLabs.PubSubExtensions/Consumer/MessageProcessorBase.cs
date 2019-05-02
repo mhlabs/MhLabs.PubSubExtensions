@@ -61,25 +61,48 @@ namespace MhLabs.PubSubExtensions.Consumer
             catch (Exception exception)
             {
                 LogError(ev, exception, context);
-                throw;
+
+                var result = await HandleError(ev, context, exception);
+                if (result == HandleErrorResult.Throw)
+                {
+                    throw;
+                }
             }
 
         }
 
+        protected virtual Task<HandleErrorResult> HandleError(TEventType ev, ILambdaContext context, Exception exception)
+        {
+            return Task.FromResult(HandleErrorResult.Throw);
+        }
+
+        protected enum HandleErrorResult
+        {
+            Throw,
+            ErrorHandledByConsumer
+        }
+
         private void LogError(TEventType ev, Exception exception, ILambdaContext context)
         {
-            var payload = JsonConvert.SerializeObject(ev);
-            var eventType = ev?.GetType();
+            try
+            {
+                var payload = JsonConvert.SerializeObject(ev);
+                var eventType = ev?.GetType();
 
-            if (_logger == NullLogger.Instance)
-            {
-                context.Logger.Log($"Error when processing message type: {eventType}. Raw message: {payload}");
+                if (_logger == NullLogger.Instance)
+                {
+                    context.Logger.Log($"Error when processing message type: {eventType}. Raw message: {payload}");
+                }
+                else
+                {
+                    _logger.LogError(exception,
+                        "Error when processing message type: {TEventType}. Raw message: {TEvent}",
+                        eventType, payload);
+                }
             }
-            else
+            catch (Exception ex)
             {
-                _logger.LogError(exception,
-                    "Error when processing message type: {TEventType}. Raw message: {TEvent}",
-                    eventType, payload);
+                System.Console.WriteLine($"Exception during LogError: {ex.ToString()}");
             }
         }
 
