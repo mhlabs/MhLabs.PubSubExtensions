@@ -23,7 +23,7 @@ namespace MhLabs.PubSubExtensions.Consumer
         private readonly IDictionary<Type, IMessageExtractor> _messageExtractorRegister = new Dictionary<Type, IMessageExtractor>();
 
         protected abstract Task HandleEvent(IEnumerable<TMessageType> items, ILambdaContext context);
-        protected virtual async Task HandleRawEvent<TEventType>(TEventType items, ILambdaContext context) {
+        protected virtual async Task HandleRawEvent(TEventType items, ILambdaContext context) {
             await Task.CompletedTask;
         }
 
@@ -60,7 +60,7 @@ namespace MhLabs.PubSubExtensions.Consumer
                 await PreparePubSubMessage(ev);
                 var rawData = await _messageExtractorRegister[ev.GetType()].ExtractEventBody<TEventType, TMessageType>(ev);
                 await HandleEvent(rawData, context);
-                await HandleRawEvent<TEventType>(ev, context);
+                await HandleRawEvent(ev, context);
             }
             catch (Exception exception)
             {
