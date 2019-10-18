@@ -23,7 +23,8 @@ namespace MhLabs.PubSubExtensions.Consumer
         private readonly IDictionary<Type, IMessageExtractor> _messageExtractorRegister = new Dictionary<Type, IMessageExtractor>();
 
         protected abstract Task HandleEvent(IEnumerable<TMessageType> items, ILambdaContext context);
-        protected virtual async Task HandleRawEvent(TEventType items, ILambdaContext context) {
+        protected virtual async Task HandleRawEvent(TEventType items, ILambdaContext context)
+        {
             await Task.CompletedTask;
         }
 
@@ -32,14 +33,7 @@ namespace MhLabs.PubSubExtensions.Consumer
 
         protected void RegisterExtractor(IMessageExtractor extractor)
         {
-            if (!_messageExtractorRegister.ContainsKey(extractor.ExtractorForType))
-            {
-                _messageExtractorRegister.Add(extractor.ExtractorForType, extractor);
-            }
-            else
-            {
-                _messageExtractorRegister[extractor.ExtractorForType] = extractor;
-            }
+            _messageExtractorRegister[extractor.ExtractorForType] = extractor;
         }
 
         protected MessageProcessorBase(IAmazonS3 s3Client = null, ILoggerFactory loggerFactory = null)
