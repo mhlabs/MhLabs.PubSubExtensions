@@ -38,7 +38,7 @@ namespace MhLabs.PubSubExtensions.Consumer
 
         protected MessageProcessorBase(IAmazonS3 s3Client = null, ILoggerFactory loggerFactory = null)
         {
-            _s3Client = s3Client ?? new AmazonS3Client(RegionEndpoint.GetBySystemName(Environment.GetEnvironmentVariable("AWS_DEFAULT_REGION")));
+            _s3Client = s3Client ?? new AmazonS3Client(RegionEndpoint.GetBySystemName(Environment.GetEnvironmentVariable("AWS_REGION")));
             RegisterExtractor(new SQSMessageExtractor());
             RegisterExtractor(new SNSMessageExtractor());
             RegisterExtractor(new KinesisMessageExtractor());
