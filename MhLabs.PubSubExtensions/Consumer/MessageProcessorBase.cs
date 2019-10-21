@@ -4,6 +4,7 @@ using System.IO;
 using System.Threading.Tasks;
 using Amazon;
 using Amazon.Lambda.Core;
+using Amazon.Lambda.KinesisEvents;
 using Amazon.Lambda.SNSEvents;
 using Amazon.Lambda.SQSEvents;
 using Amazon.S3;
@@ -16,13 +17,12 @@ using static Amazon.Lambda.SNSEvents.SNSEvent;
 
 namespace MhLabs.PubSubExtensions.Consumer
 {
-
     public abstract class MessageProcessorBase<TEventType, TMessageType> where TMessageType : class, new()
     {
-
-        private readonly IDictionary<Type, IMessageExtractor> _messageExtractorRegister = new Dictionary<Type, IMessageExtractor>();
+        private readonly IDictionary<Type, IMessageExtractor<TMessageType>> _messageExtractorRegister;
 
         protected abstract Task HandleEvent(IEnumerable<TMessageType> items, ILambdaContext context);
+
         protected virtual async Task HandleRawEvent(TEventType items, ILambdaContext context)
         {
             await Task.CompletedTask;
@@ -31,7 +31,7 @@ namespace MhLabs.PubSubExtensions.Consumer
         private readonly IAmazonS3 _s3Client;
         private readonly ILogger _logger;
 
-        protected void RegisterExtractor(IMessageExtractor extractor)
+        protected void RegisterExtractor(IMessageExtractor<TMessageType> extractor)
         {
             _messageExtractorRegister[extractor.ExtractorForType] = extractor;
         }
@@ -39,9 +39,12 @@ namespace MhLabs.PubSubExtensions.Consumer
         protected MessageProcessorBase(IAmazonS3 s3Client = null, ILoggerFactory loggerFactory = null)
         {
             _s3Client = s3Client ?? new AmazonS3Client(RegionEndpoint.GetBySystemName(Environment.GetEnvironmentVariable("AWS_REGION")));
-            RegisterExtractor(new SQSMessageExtractor());
-            RegisterExtractor(new SNSMessageExtractor());
-            RegisterExtractor(new KinesisMessageExtractor());
+            _messageExtractorRegister = new Dictionary<Type, IMessageExtractor<TMessageType>>
+            {
+                { typeof(SQSEvent), new SQSMessageExtractor<TMessageType>()},
+                { typeof(SNSEvent), new SNSMessageExtractor<TMessageType>()},
+                { typeof(KinesisEvent), new KinesisMessageExtractor<TMessageType>()}
+            };
 
             _logger = loggerFactory == null ? NullLogger.Instance : loggerFactory.CreateLogger(GetType());
         }
@@ -52,7 +55,7 @@ namespace MhLabs.PubSubExtensions.Consumer
             try
             {
                 await PreparePubSubMessage(ev);
-                var rawData = await _messageExtractorRegister[ev.GetType()].ExtractEventBody<TEventType, TMessageType>(ev);
+                var rawData = await _messageExtractorRegister[typeof(TEventType)].ExtractEventBody(ev);
                 await HandleEvent(rawData, context);
                 await HandleRawEvent(ev, context);
             }

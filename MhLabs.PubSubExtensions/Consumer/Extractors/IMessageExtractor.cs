@@ -4,9 +4,10 @@ using System.Threading.Tasks;
 
 namespace MhLabs.PubSubExtensions.Consumer.Extractors
 {
-    public interface IMessageExtractor
+    public interface IMessageExtractor<TMessageType>
+         where TMessageType : class, new()
     {
         Type ExtractorForType { get; }
-        Task<IEnumerable<TMessageType>> ExtractEventBody<TEventType, TMessageType>(TEventType ev) where TMessageType : class, new();
+        Task<IEnumerable<TMessageType>> ExtractEventBody<TEventType>(TEventType ev);
     }
 }
