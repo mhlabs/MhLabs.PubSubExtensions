@@ -47,7 +47,6 @@ public static class DiffExtension
                     var objDiff = obj1.PropertyDiff(obj2, prefix);
                     return objDiff;
                 }
-
             }
             else
             {
@@ -96,7 +95,7 @@ public static class DiffExtension
                         }
                         catch (Exception ex)
                         {
-                            Console.WriteLine(ex.Message + " " +  ex.StackTrace);
+                            Console.WriteLine(ex);
                             return new List<string>();
                         }
                     }

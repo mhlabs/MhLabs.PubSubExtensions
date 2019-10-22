@@ -69,7 +69,6 @@ namespace MhLabs.PubSubExtensions.Consumer
                     throw;
                 }
             }
-
         }
 
         protected virtual Task<HandleErrorResult> HandleError(TEventType ev, ILambdaContext context, Exception exception)
@@ -103,7 +102,7 @@ namespace MhLabs.PubSubExtensions.Consumer
             }
             catch (Exception ex)
             {
-                System.Console.WriteLine($"Exception during LogError: {ex.ToString()}");
+                Console.WriteLine($"Exception during LogError: {ex}");
             }
         }
 
@@ -125,7 +124,6 @@ namespace MhLabs.PubSubExtensions.Consumer
                 LambdaLogger.Log($"Starting to process {sqs.Records.Count} SQS records...");
                 foreach (var record in sqs.Records)
                 {
-
                     if (record.MessageAttributes.ContainsKey(Constants.PubSubBucket))
                     {
                         LambdaLogger.Log($"The records message attributes contains key {Constants.PubSubBucket}");
