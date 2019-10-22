@@ -143,7 +143,7 @@ namespace MhLabs.PubSubExtensions.Consumer
                 var s3Response = await _s3Client.GetObjectAsync(bucket, key);
                 var json = await ReadStream(s3Response.ResponseStream);
                 var snsEvent = JsonConvert.DeserializeObject<SNSMessage>(json);
-                if (snsEvent != null && snsEvent.Message != null && snsEvent.MessageAttributes != null)
+                if (snsEvent?.Message != null && snsEvent.MessageAttributes != null)
                 {
                     record.Body = snsEvent.Message;
 
