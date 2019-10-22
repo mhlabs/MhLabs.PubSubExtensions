@@ -132,39 +132,41 @@ namespace MhLabs.PubSubExtensions.Consumer
             LambdaLogger.Log($"Starting to process {sqs.Records.Count} SQS records...");
             foreach (var record in sqs.Records)
             {
-                if (record.MessageAttributes.ContainsKey(Constants.PubSubBucket))
+                if (!record.MessageAttributes.ContainsKey(Constants.PubSubBucket))
                 {
-                    LambdaLogger.Log($"The records message attributes contains key {Constants.PubSubBucket}");
-                    var bucket = record.MessageAttributes[Constants.PubSubBucket].StringValue;
-                    var key = record.MessageAttributes[Constants.PubSubKey].StringValue;
-                    var s3Response = await _s3Client.GetObjectAsync(bucket, key);
-                    var json = await ReadStream(s3Response.ResponseStream);
-                    var snsEvent = JsonConvert.DeserializeObject<SNSMessage>(json);
-                    if (snsEvent != null && snsEvent.Message != null && snsEvent.MessageAttributes != null)
-                    {
-                        record.Body = snsEvent.Message;
+                    continue;
+                }
 
-                        LambdaLogger.Log("Adding SNS message attributes to record");
-                        foreach (var attribute in snsEvent.MessageAttributes)
+                LambdaLogger.Log($"The records message attributes contains key {Constants.PubSubBucket}");
+                var bucket = record.MessageAttributes[Constants.PubSubBucket].StringValue;
+                var key = record.MessageAttributes[Constants.PubSubKey].StringValue;
+                var s3Response = await _s3Client.GetObjectAsync(bucket, key);
+                var json = await ReadStream(s3Response.ResponseStream);
+                var snsEvent = JsonConvert.DeserializeObject<SNSMessage>(json);
+                if (snsEvent != null && snsEvent.Message != null && snsEvent.MessageAttributes != null)
+                {
+                    record.Body = snsEvent.Message;
+
+                    LambdaLogger.Log("Adding SNS message attributes to record");
+                    foreach (var attribute in snsEvent.MessageAttributes)
+                    {
+                        if (!record.MessageAttributes.ContainsKey(attribute.Key))
                         {
-                            if (!record.MessageAttributes.ContainsKey(attribute.Key))
-                            {
-                                record.MessageAttributes.Add(attribute.Key, new SQSEvent.MessageAttribute { DataType = "String", StringValue = attribute.Value.Value });
-                            }
+                            record.MessageAttributes.Add(attribute.Key, new SQSEvent.MessageAttribute { DataType = "String", StringValue = attribute.Value.Value });
                         }
                     }
-                    else
-                    {
-                        var sqsEvent = JsonConvert.DeserializeObject<SendMessageRequest>(json);
-                        record.Body = sqsEvent.MessageBody;
+                }
+                else
+                {
+                    var sqsEvent = JsonConvert.DeserializeObject<SendMessageRequest>(json);
+                    record.Body = sqsEvent.MessageBody;
 
-                        LambdaLogger.Log("Adding SQS message attributes to record");
-                        foreach (var attribute in sqsEvent.MessageAttributes)
+                    LambdaLogger.Log("Adding SQS message attributes to record");
+                    foreach (var attribute in sqsEvent.MessageAttributes)
+                    {
+                        if (!record.MessageAttributes.ContainsKey(attribute.Key))
                         {
-                            if (!record.MessageAttributes.ContainsKey(attribute.Key))
-                            {
-                                record.MessageAttributes.Add(attribute.Key, new SQSEvent.MessageAttribute { DataType = "String", StringValue = attribute.Value.StringValue });
-                            }
+                            record.MessageAttributes.Add(attribute.Key, new SQSEvent.MessageAttribute { DataType = "String", StringValue = attribute.Value.StringValue });
                         }
                     }
                 }
@@ -176,23 +178,25 @@ namespace MhLabs.PubSubExtensions.Consumer
             LambdaLogger.Log($"Starting to process {sns.Records.Count} SNS records...");
             foreach (var record in sns.Records)
             {
-                if (record.Sns.MessageAttributes.ContainsKey(Constants.PubSubBucket))
+                if (!record.Sns.MessageAttributes.ContainsKey(Constants.PubSubBucket))
                 {
-                    LambdaLogger.Log($"The records message attributes contains key {Constants.PubSubBucket}");
-                    var bucket = record.Sns.MessageAttributes[Constants.PubSubBucket].Value;
-                    var key = record.Sns.MessageAttributes[Constants.PubSubKey].Value;
-                    var s3Response = await _s3Client.GetObjectAsync(bucket, key);
-                    var json = await ReadStream(s3Response.ResponseStream);
-                    var snsEvent = JsonConvert.DeserializeObject<SNSMessage>(json);
-                    record.Sns.Message = snsEvent.Message;
+                    continue;
+                }
 
-                    LambdaLogger.Log("Adding SNS message attributes to record");
-                    foreach (var attribute in snsEvent.MessageAttributes)
+                LambdaLogger.Log($"The records message attributes contains key {Constants.PubSubBucket}");
+                var bucket = record.Sns.MessageAttributes[Constants.PubSubBucket].Value;
+                var key = record.Sns.MessageAttributes[Constants.PubSubKey].Value;
+                var s3Response = await _s3Client.GetObjectAsync(bucket, key);
+                var json = await ReadStream(s3Response.ResponseStream);
+                var snsEvent = JsonConvert.DeserializeObject<SNSMessage>(json);
+                record.Sns.Message = snsEvent.Message;
+
+                LambdaLogger.Log("Adding SNS message attributes to record");
+                foreach (var attribute in snsEvent.MessageAttributes)
+                {
+                    if (!record.Sns.MessageAttributes.ContainsKey(attribute.Key))
                     {
-                        if (!record.Sns.MessageAttributes.ContainsKey(attribute.Key))
-                        {
-                            record.Sns.MessageAttributes.Add(attribute.Key, attribute.Value);
-                        }
+                        record.Sns.MessageAttributes.Add(attribute.Key, attribute.Value);
                     }
                 }
             }
