@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 
 public static class DiffExtension
 {
@@ -10,12 +9,13 @@ public static class DiffExtension
     {
         List<string> variances = new List<string>();
         var nullSafeValue = (val1 ?? val2);
-        var propertyInfos = nullSafeValue.GetType().GetProperties().Where(x => x.DeclaringType == nullSafeValue.GetType() && !x.GetIndexParameters().Any());
+        var safeType = nullSafeValue.GetType();
+        var propertyInfos = safeType.GetProperties().Where(x => x.DeclaringType == safeType && x.GetIndexParameters().Length == 0);
         foreach (var p in propertyInfos)
         {
             var value1 = val1 != null ? p.GetValue(val1) : null;
             var value2 = val2 != null ? p.GetValue(val2) : null;
-            if ((value1 == null ^ value2 == null) || !value1?.Equals(value2) == true)
+            if ((value1 == null ^ value2 == null) || value1?.Equals(value2) == false)
             {
                 var fullName = GetFullName(prefix, p.Name);
                 if (!IsSimple(p.PropertyType))
@@ -33,7 +33,7 @@ public static class DiffExtension
                 }
             }
         }
-        var piIndexed = nullSafeValue.GetType().GetProperties().Any(x => x.GetIndexParameters().Length > 0);
+        var piIndexed = safeType.GetProperties().Any(x => x.GetIndexParameters().Length > 0);
         if (!piIndexed)
         {
             return variances;
@@ -53,7 +53,7 @@ public static class DiffExtension
         }
         else
         {
-            var type = nullSafeValue.GetType();
+            var type = safeType;
             var indexType = type.GetProperty("Item") != null
                 ? type.GetProperty("Item").PropertyType
                 : type;
