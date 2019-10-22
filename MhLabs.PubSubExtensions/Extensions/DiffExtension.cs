@@ -34,70 +34,72 @@ public static class DiffExtension
             }
         }
         var piIndexed = nullSafeValue.GetType().GetProperties().Any(x => x.GetIndexParameters().Length > 0);
-        if (piIndexed)
+        if (!piIndexed)
         {
-            if (nullSafeValue is IDictionary)
+            return variances;
+        }
+
+        if (nullSafeValue is IDictionary)
+        {
+            var dict1 = (IDictionary)val1;
+            var dict2 = (IDictionary)val2;
+            foreach (var key in (dict1 ?? dict2).Keys)
             {
-                var dict1 = (IDictionary)val1;
-                var dict2 = (IDictionary)val2;
-                foreach (var key in (dict1 ?? dict2).Keys)
+                var obj1 = dict1 != null && dict1.Contains(key) ? dict1[key] : null;
+                var obj2 = dict2 != null && dict2.Contains(key) ? dict2[key] : null;
+                var objDiff = obj1.PropertyDiff(obj2, prefix);
+                return objDiff;
+            }
+        }
+        else
+        {
+            var type = nullSafeValue.GetType();
+            var indexType = type.GetProperty("Item") != null
+                ? type.GetProperty("Item").PropertyType
+                : type;
+
+            if (type == typeof(string))
+            {
+                // TODO: string in array, no way no know attribute name, position etc. with current structure
+                return new List<string>();
+            }
+
+            if (!IsSimple(indexType))
+            {
+                var enum1 = (IEnumerable<object>)val1;
+                var enum2 = (IEnumerable<object>)val2;
+                for (var i = 0; i < (enum1 ?? enum2).Count(); i++)
                 {
-                    var obj1 = dict1 != null && dict1.Contains(key) ? dict1[key] : null;
-                    var obj2 = dict2 != null && dict2.Contains(key) ? dict2[key] : null;
-                    var objDiff = obj1.PropertyDiff(obj2, prefix);
-                    return objDiff;
+                    var obj1 = enum1 != null ? enum1.ElementAtOrDefault(i) : null;
+                    var obj2 = enum2 != null ? enum2.ElementAtOrDefault(i) : null;
+                    var enumDiff = obj1.PropertyDiff(obj2, prefix);
+                    return enumDiff;
                 }
             }
             else
             {
-                var type = nullSafeValue.GetType();
-                var indexType = type.GetProperty("Item") != null
-                    ? type.GetProperty("Item").PropertyType
-                    : type;
-
-                if (type == typeof(string))
+                if (val1 == null ^ val2 == null)
                 {
-                    // TODO: string in array, no way no know attribute name, position etc. with current structure
-                    return new List<string>();
+                    return new List<string>() { prefix };
                 }
 
-                if (!IsSimple(indexType))
+                var enum1 = (IList)val1;
+                var enum2 = (IList)val2;
+                for (var i = 0; i < (enum1 ?? enum2).Count; i++)
                 {
-                    var enum1 = (IEnumerable<object>)val1;
-                    var enum2 = (IEnumerable<object>)val2;
-                    for (var i = 0; i < (enum1 ?? enum2).Count(); i++)
+                    try
                     {
-                        var obj1 = enum1 != null ? enum1.ElementAtOrDefault(i) : null;
-                        var obj2 = enum2 != null ? enum2.ElementAtOrDefault(i) : null;
-                        var enumDiff = obj1.PropertyDiff(obj2, prefix);
-                        return enumDiff;
-                    }
-                }
-                else
-                {
-                    if (val1 == null ^ val2 == null)
-                    {
-                        return new List<string>() { prefix };
-                    }
-
-                    var enum1 = (IList)val1;
-                    var enum2 = (IList)val2;
-                    for (var i = 0; i < (enum1 ?? enum2).Count; i++)
-                    {
-                        try
+                        var obj1 = enum1[i];
+                        var obj2 = enum2[i];
+                        if (!obj1.Equals(obj2))
                         {
-                            var obj1 = enum1[i];
-                            var obj2 = enum2[i];
-                            if (!obj1.Equals(obj2))
-                            {
-                                return new List<string>() { prefix };
-                            }
+                            return new List<string>() { prefix };
                         }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine(ex);
-                            return new List<string>();
-                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex);
+                        return new List<string>();
                     }
                 }
             }
