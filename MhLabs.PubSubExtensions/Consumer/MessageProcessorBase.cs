@@ -21,6 +21,10 @@ namespace MhLabs.PubSubExtensions.Consumer
     {
         private readonly IDictionary<Type, IMessageExtractor<TMessageType>> _messageExtractorRegister;
 
+#pragma warning disable CS0618 // Type or member is obsolete
+        private IMessageExtractor _deprecatedExtractor;
+#pragma warning restore CS0618 // Type or member is obsolete
+
         protected abstract Task HandleEvent(IEnumerable<TMessageType> items, ILambdaContext context);
 
         protected virtual async Task HandleRawEvent(TEventType items, ILambdaContext context)
@@ -36,6 +40,12 @@ namespace MhLabs.PubSubExtensions.Consumer
             _messageExtractorRegister[extractor.ExtractorForType] = extractor;
         }
 
+        [Obsolete("Use IMessageExtractor<TMessageType> interface instead")]
+        protected void RegisterExtractor(IMessageExtractor extractor)
+        {
+            _deprecatedExtractor = extractor;
+        }
+
         protected MessageProcessorBase(IAmazonS3 s3Client = null, ILoggerFactory loggerFactory = null)
         {
             _s3Client = s3Client ?? new AmazonS3Client(RegionEndpoint.GetBySystemName(Environment.GetEnvironmentVariable("AWS_REGION")));
@@ -45,6 +55,7 @@ namespace MhLabs.PubSubExtensions.Consumer
                 { typeof(SNSEvent), new SNSMessageExtractor<TMessageType>()},
                 { typeof(KinesisEvent), new KinesisMessageExtractor<TMessageType>()}
             };
+            _deprecatedExtractor = default;
 
             _logger = loggerFactory == null ? NullLogger.Instance : loggerFactory.CreateLogger(GetType());
         }
@@ -55,7 +66,17 @@ namespace MhLabs.PubSubExtensions.Consumer
             try
             {
                 await PreparePubSubMessage(ev);
-                var rawData = await _messageExtractorRegister[typeof(TEventType)].ExtractEventBody(ev);
+
+                IEnumerable<TMessageType> rawData;
+                if (_deprecatedExtractor != default)
+                {
+                    rawData = await _deprecatedExtractor.ExtractEventBody<TEventType, TMessageType>(ev);
+                }
+                else
+                {
+                    rawData = await _messageExtractorRegister[typeof(TEventType)].ExtractEventBody(ev);
+                }
+
                 await HandleEvent(rawData, context);
                 await HandleRawEvent(ev, context);
             }
