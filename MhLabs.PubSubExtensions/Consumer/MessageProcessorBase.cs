@@ -19,7 +19,7 @@ namespace MhLabs.PubSubExtensions.Consumer
 {
     public abstract class MessageProcessorBase<TEventType, TMessageType> where TMessageType : class, new()
     {
-        private readonly IDictionary<Type, IMessageExtractor<TMessageType>> _messageExtractorRegister;
+        private IMessageExtractor<TMessageType> _messageExtractor;
 
 #pragma warning disable CS0618 // Type or member is obsolete
         private IMessageExtractor _deprecatedExtractor;
@@ -37,7 +37,7 @@ namespace MhLabs.PubSubExtensions.Consumer
 
         protected void RegisterExtractor(IMessageExtractor<TMessageType> extractor)
         {
-            _messageExtractorRegister[extractor.ExtractorForType] = extractor;
+            _messageExtractor = extractor;
         }
 
         [Obsolete("Use IMessageExtractor<TMessageType> interface instead")]
@@ -49,12 +49,20 @@ namespace MhLabs.PubSubExtensions.Consumer
         protected MessageProcessorBase(IAmazonS3 s3Client = null, ILoggerFactory loggerFactory = null)
         {
             _s3Client = s3Client ?? new AmazonS3Client(RegionEndpoint.GetBySystemName(Environment.GetEnvironmentVariable("AWS_REGION")));
-            _messageExtractorRegister = new Dictionary<Type, IMessageExtractor<TMessageType>>
+
+            if (typeof(TEventType) == typeof(SQSEvent))
             {
-                { typeof(SQSEvent), new SQSMessageExtractor<TMessageType>()},
-                { typeof(SNSEvent), new SNSMessageExtractor<TMessageType>()},
-                { typeof(KinesisEvent), new KinesisMessageExtractor<TMessageType>()}
-            };
+                _messageExtractor = new SQSMessageExtractor<TMessageType>();
+            }
+            else if (typeof(TEventType) == typeof(SNSEvent))
+            {
+                _messageExtractor = new SNSMessageExtractor<TMessageType>();
+            }
+            else if (typeof(TEventType) == typeof(KinesisEvent))
+            {
+                _messageExtractor = new KinesisMessageExtractor<TMessageType>();
+            }
+
             _deprecatedExtractor = default;
 
             _logger = loggerFactory == null ? NullLogger.Instance : loggerFactory.CreateLogger(GetType());
@@ -74,7 +82,7 @@ namespace MhLabs.PubSubExtensions.Consumer
                 }
                 else
                 {
-                    rawData = await _messageExtractorRegister[typeof(TEventType)].ExtractEventBody(ev);
+                    rawData = await _messageExtractor.ExtractEventBody(ev);
                 }
 
                 await HandleEvent(rawData, context);
