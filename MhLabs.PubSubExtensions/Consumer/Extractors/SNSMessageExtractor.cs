@@ -7,15 +7,15 @@ using Newtonsoft.Json;
 
 namespace MhLabs.PubSubExtensions.Consumer.Extractors
 {
-    public class SNSMessageExtractor : IMessageExtractor
+    public class SNSMessageExtractor<TMessageType> : IMessageExtractor<TMessageType>
+          where TMessageType : class, new()
     {
         public Type ExtractorForType => typeof(SNSEvent);
 
-        public async Task<IEnumerable<TMessageType>> ExtractEventBody<TEventType, TMessageType>(TEventType ev) where TMessageType : class, new()
+        public async Task<IEnumerable<TMessageType>> ExtractEventBody<TEventType>(TEventType ev)
         {
             var snsEvent = ev as SNSEvent;
             return await Task.FromResult(snsEvent.Records.Select(p => JsonConvert.DeserializeObject<TMessageType>(p.Sns.Message)));
-
         }
     }
 }
