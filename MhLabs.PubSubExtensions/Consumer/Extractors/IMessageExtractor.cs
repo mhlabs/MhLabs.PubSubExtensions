@@ -11,7 +11,6 @@ namespace MhLabs.PubSubExtensions.Consumer.Extractors
         Task<IEnumerable<TMessageType>> ExtractEventBody<TEventType>(TEventType ev);
     }
 
-
     [Obsolete("Use IMessageExtractor<TMessageType> interface instead")]
     public interface IMessageExtractor
     {
