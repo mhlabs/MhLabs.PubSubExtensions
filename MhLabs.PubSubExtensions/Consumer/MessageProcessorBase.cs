@@ -175,7 +175,7 @@ namespace MhLabs.PubSubExtensions.Consumer
                 var snsEvent = JsonConvert.DeserializeObject<SNSMessage>(json);
                 if (snsEvent?.Message != null && snsEvent.MessageAttributes != null)
                 {
-                    LambdaLogger.Log($"sns.message_attributes:{string.Join(",", snsEvent.MessageAttributes.SelectMany(p => $"{p.Key}={p.Value?.Value?.Replace("=", "%3D")}"))}");
+                    LambdaLogger.Log($"mathem.env:sns.message_attributes:{string.Join(",", snsEvent.MessageAttributes.SelectMany(p => $"{p.Key}={p.Value?.Value?.Replace("=", "%3D")}"))}");
                     record.Body = snsEvent.Message;
 
                     LambdaLogger.Log("Adding SNS message attributes to record");
