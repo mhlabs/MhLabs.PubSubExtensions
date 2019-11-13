@@ -175,7 +175,6 @@ namespace MhLabs.PubSubExtensions.Consumer
                 var snsEvent = JsonConvert.DeserializeObject<SNSMessage>(json);
                 if (snsEvent?.Message != null && snsEvent.MessageAttributes != null)
                 {
-                    LambdaLogger.Log($"mathem.env:sns.message_attributes:{string.Join(",", snsEvent.MessageAttributes.SelectMany(p => $"{p.Key}={p.Value?.Value?.Replace("=", "%3D")}"))}");
                     record.Body = snsEvent.Message;
 
                     LambdaLogger.Log("Adding SNS message attributes to record");
@@ -200,6 +199,10 @@ namespace MhLabs.PubSubExtensions.Consumer
                             record.MessageAttributes.Add(attribute.Key, new SQSEvent.MessageAttribute { DataType = "String", StringValue = attribute.Value.StringValue });
                         }
                     }
+                }
+                if (record.MessageAttributes.Any())
+                {
+                    LambdaLogger.Log($"mathem.env:sns.message_attributes:{string.Join(",", record.MessageAttributes.SelectMany(p => $"{p.Key}={p.Value?.StringValue?.Replace("=", "%3D")}"))}");
                 }
             }
         }
@@ -230,17 +233,20 @@ namespace MhLabs.PubSubExtensions.Consumer
                         record.Sns.MessageAttributes.Add(attribute.Key, attribute.Value);
                     }
                 }
+                if (record.Sns.MessageAttributes.Any())
+                {
+                    LambdaLogger.Log($"mathem.env:sns.message_attributes:{string.Join(",", record.Sns.MessageAttributes.SelectMany(p => $"{p.Key}={p.Value?.Value?.Replace("=", "%3D")}"))}");
+                }
+
             }
         }
 
         private async Task<string> ReadStream(Stream responseStream)
         {
-            using (var reader = new StreamReader(responseStream))
+            using(var reader = new StreamReader(responseStream))
             {
                 return await reader.ReadToEndAsync();
             }
         }
     }
 }
-
-
