@@ -164,7 +164,7 @@ namespace MhLabs.PubSubExtensions.Consumer
             {
                 if (record.MessageAttributes.Any())
                 {
-                    LambdaLogger.Log($"mathem.env:sns.message_attributes:{string.Join(",", record.MessageAttributes.SelectMany(p => $"{p.Key}={p.Value?.StringValue?.Replace("=", "%3D")}"))}");
+                    LambdaLogger.Log($"mathem.env:sns.message_attributes:{string.Join(",", record.MessageAttributes.Select(p => $"{p.Key}={p.Value?.StringValue?.Replace("=", "%3D")}"))}");
                 }
 
                 if (!record.MessageAttributes.ContainsKey(Constants.PubSubBucket))
