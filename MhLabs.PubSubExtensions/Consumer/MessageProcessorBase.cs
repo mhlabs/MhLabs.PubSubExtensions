@@ -162,6 +162,11 @@ namespace MhLabs.PubSubExtensions.Consumer
             LambdaLogger.Log($"Starting to process {sqs.Records.Count} SQS records...");
             foreach (var record in sqs.Records)
             {
+                if (record.MessageAttributes.Any())
+                {
+                    LambdaLogger.Log($"mathem.env:sns.message_attributes:{string.Join(",", record.MessageAttributes.SelectMany(p => $"{p.Key}={p.Value?.StringValue?.Replace("=", "%3D")}"))}");
+                }
+
                 if (!record.MessageAttributes.ContainsKey(Constants.PubSubBucket))
                 {
                     continue;
@@ -199,10 +204,6 @@ namespace MhLabs.PubSubExtensions.Consumer
                             record.MessageAttributes.Add(attribute.Key, new SQSEvent.MessageAttribute { DataType = "String", StringValue = attribute.Value.StringValue });
                         }
                     }
-                }
-                if (record.MessageAttributes.Any())
-                {
-                    LambdaLogger.Log($"mathem.env:sns.message_attributes:{string.Join(",", record.MessageAttributes.SelectMany(p => $"{p.Key}={p.Value?.StringValue?.Replace("=", "%3D")}"))}");
                 }
             }
         }
