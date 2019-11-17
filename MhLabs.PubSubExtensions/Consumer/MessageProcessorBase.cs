@@ -162,11 +162,6 @@ namespace MhLabs.PubSubExtensions.Consumer
             LambdaLogger.Log($"Starting to process {sqs.Records.Count} SQS records...");
             foreach (var record in sqs.Records)
             {
-                if (record.MessageAttributes.Any())
-                {
-                    LambdaLogger.Log($"mathem.env:sns.message_attributes|{record.EventSourceArn}|{string.Join(",", record.MessageAttributes.Select(p => $"{p.Key}={p.Value?.StringValue?.Replace("=", "%3D").Replace(",", "%2C")}"))}");
-                }
-
                 if (!record.MessageAttributes.ContainsKey(Constants.PubSubBucket))
                 {
                     continue;
