@@ -6,13 +6,12 @@ using System.Threading.Tasks;
 
 namespace MhLabs.PubSubExtensions.Consumer.Extractors
 {
-    public class SQSMessageExtractor<TMessage> : IMessageExtractor<TMessage>
+    public class SQSMessageExtractor<TMessage> : IMessageExtractor<SQSEvent, TMessage>
           where TMessage : class, new()
     {
-        public async Task<IEnumerable<TMessage>> ExtractEventBody<TEvent>(TEvent ev)
+        public async Task<IEnumerable<TMessage>> ExtractEventBody(SQSEvent ev)
         {
-            var sqsEvent = ev as SQSEvent;
-            return await Task.FromResult(sqsEvent.Records.Select(p => JsonConvert.DeserializeObject<TMessage>(p.Body)));
+            return await Task.FromResult(ev.Records.Select(p => JsonConvert.DeserializeObject<TMessage>(p.Body)));
         }
     }
 }

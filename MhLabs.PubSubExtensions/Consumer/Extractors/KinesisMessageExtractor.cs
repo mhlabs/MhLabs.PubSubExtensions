@@ -5,13 +5,12 @@ using System.Threading.Tasks;
 
 namespace MhLabs.PubSubExtensions.Consumer.Extractors
 {
-    public class KinesisMessageExtractor<TMessage> : IMessageExtractor<TMessage>
+    public class KinesisMessageExtractor<TMessage> : IMessageExtractor<KinesisEvent, TMessage>
           where TMessage : class, new()
     {
-        public async Task<IEnumerable<TMessage>> ExtractEventBody<TEvent>(TEvent ev)
+        public async Task<IEnumerable<TMessage>> ExtractEventBody(KinesisEvent ev)
         {
-            var kinesisEvent = ev as KinesisEvent;
-            return await Task.FromResult(kinesisEvent.Records.Select(p => p.Kinesis.Data.DeserializeStream<TMessage>()));
+            return await Task.FromResult(ev.Records.Select(p => p.Kinesis.Data.DeserializeStream<TMessage>()));
         }
     }
 }

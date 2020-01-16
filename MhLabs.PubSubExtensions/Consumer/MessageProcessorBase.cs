@@ -1,6 +1,5 @@
 using Amazon;
 using Amazon.Lambda.Core;
-using Amazon.Lambda.KinesisEvents;
 using Amazon.Lambda.SNSEvents;
 using Amazon.Lambda.SQSEvents;
 using Amazon.S3;
@@ -20,7 +19,7 @@ namespace MhLabs.PubSubExtensions.Consumer
 {
     public abstract class MessageProcessorBase<TEvent, TMessage> where TMessage : class, new()
     {
-        private IMessageExtractor<TMessage> _messageExtractor;
+        private IMessageExtractor<TEvent, TMessage> _messageExtractor;
 
 #pragma warning disable CS0618 // Type or member is obsolete
         private IMessageExtractor _deprecatedExtractor;
@@ -36,7 +35,7 @@ namespace MhLabs.PubSubExtensions.Consumer
         private readonly IAmazonS3 _s3Client;
         private readonly ILogger _logger;
 
-        protected void RegisterExtractor(IMessageExtractor<TMessage> extractor)
+        protected void RegisterExtractor(IMessageExtractor<TEvent, TMessage> extractor)
         {
             _messageExtractor = extractor;
         }
@@ -50,21 +49,6 @@ namespace MhLabs.PubSubExtensions.Consumer
         protected MessageProcessorBase(IAmazonS3 s3Client = null, ILoggerFactory loggerFactory = null)
         {
             _s3Client = s3Client ?? new AmazonS3Client(RegionEndpoint.GetBySystemName(Environment.GetEnvironmentVariable("AWS_REGION")));
-
-            if (typeof(TEvent) == typeof(SQSEvent))
-            {
-                _messageExtractor = new SQSMessageExtractor<TMessage>();
-            }
-            else if (typeof(TEvent) == typeof(SNSEvent))
-            {
-                _messageExtractor = new SNSMessageExtractor<TMessage>();
-            }
-            else if (typeof(TEvent) == typeof(KinesisEvent))
-            {
-                _messageExtractor = new KinesisMessageExtractor<TMessage>();
-            }
-
-            _deprecatedExtractor = default;
 
             _logger = loggerFactory == null ? NullLogger.Instance : loggerFactory.CreateLogger(GetType());
         }
