@@ -1,6 +1,5 @@
 using Amazon.Lambda.SQSEvents;
 using Newtonsoft.Json;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -10,8 +9,6 @@ namespace MhLabs.PubSubExtensions.Consumer.Extractors
     public class SQSMessageExtractor<TMessage> : IMessageExtractor<TMessage>
           where TMessage : class, new()
     {
-        public Type ExtractorForType => typeof(SQSEvent);
-
         public async Task<IEnumerable<TMessage>> ExtractEventBody<TEvent>(TEvent ev)
         {
             var sqsEvent = ev as SQSEvent;
