@@ -1,8 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 using Amazon;
 using Amazon.Lambda.Core;
 using Amazon.Lambda.KinesisEvents;
@@ -14,21 +9,26 @@ using MhLabs.PubSubExtensions.Consumer.Extractors;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 using static Amazon.Lambda.SNSEvents.SNSEvent;
 
 namespace MhLabs.PubSubExtensions.Consumer
 {
-    public abstract class MessageProcessorBase<TEventType, TMessageType> where TMessageType : class, new()
+    public abstract class MessageProcessorBase<TEvent, TMessage> where TMessage : class, new()
     {
-        private IMessageExtractor<TMessageType> _messageExtractor;
+        private IMessageExtractor<TMessage> _messageExtractor;
 
 #pragma warning disable CS0618 // Type or member is obsolete
         private IMessageExtractor _deprecatedExtractor;
 #pragma warning restore CS0618 // Type or member is obsolete
 
-        protected abstract Task HandleEvent(IEnumerable<TMessageType> items, ILambdaContext context);
+        protected abstract Task HandleEvent(IEnumerable<TMessage> items, ILambdaContext context);
 
-        protected virtual async Task HandleRawEvent(TEventType items, ILambdaContext context)
+        protected virtual async Task HandleRawEvent(TEvent items, ILambdaContext context)
         {
             await Task.CompletedTask;
         }
@@ -36,7 +36,7 @@ namespace MhLabs.PubSubExtensions.Consumer
         private readonly IAmazonS3 _s3Client;
         private readonly ILogger _logger;
 
-        protected void RegisterExtractor(IMessageExtractor<TMessageType> extractor)
+        protected void RegisterExtractor(IMessageExtractor<TMessage> extractor)
         {
             _messageExtractor = extractor;
         }
@@ -51,17 +51,17 @@ namespace MhLabs.PubSubExtensions.Consumer
         {
             _s3Client = s3Client ?? new AmazonS3Client(RegionEndpoint.GetBySystemName(Environment.GetEnvironmentVariable("AWS_REGION")));
 
-            if (typeof(TEventType) == typeof(SQSEvent))
+            if (typeof(TEvent) == typeof(SQSEvent))
             {
-                _messageExtractor = new SQSMessageExtractor<TMessageType>();
+                _messageExtractor = new SQSMessageExtractor<TMessage>();
             }
-            else if (typeof(TEventType) == typeof(SNSEvent))
+            else if (typeof(TEvent) == typeof(SNSEvent))
             {
-                _messageExtractor = new SNSMessageExtractor<TMessageType>();
+                _messageExtractor = new SNSMessageExtractor<TMessage>();
             }
-            else if (typeof(TEventType) == typeof(KinesisEvent))
+            else if (typeof(TEvent) == typeof(KinesisEvent))
             {
-                _messageExtractor = new KinesisMessageExtractor<TMessageType>();
+                _messageExtractor = new KinesisMessageExtractor<TMessage>();
             }
 
             _deprecatedExtractor = default;
@@ -70,16 +70,16 @@ namespace MhLabs.PubSubExtensions.Consumer
         }
 
         [LambdaSerializer(typeof(Amazon.Lambda.Serialization.Json.JsonSerializer))]
-        public async Task Process(TEventType ev, ILambdaContext context)
+        public async Task Process(TEvent ev, ILambdaContext context)
         {
             try
             {
                 await PreparePubSubMessage(ev);
 
-                IEnumerable<TMessageType> rawData;
+                IEnumerable<TMessage> rawData;
                 if (_deprecatedExtractor != default)
                 {
-                    rawData = await _deprecatedExtractor.ExtractEventBody<TEventType, TMessageType>(ev);
+                    rawData = await _deprecatedExtractor.ExtractEventBody<TEvent, TMessage>(ev);
                 }
                 else
                 {
@@ -101,7 +101,7 @@ namespace MhLabs.PubSubExtensions.Consumer
             }
         }
 
-        protected virtual Task<HandleErrorResult> HandleError(TEventType ev, ILambdaContext context, Exception exception)
+        protected virtual Task<HandleErrorResult> HandleError(TEvent ev, ILambdaContext context, Exception exception)
         {
             return Task.FromResult(HandleErrorResult.Throw);
         }
@@ -112,7 +112,7 @@ namespace MhLabs.PubSubExtensions.Consumer
             ErrorHandledByConsumer
         }
 
-        private void LogError(TEventType ev, Exception exception, ILambdaContext context)
+        private void LogError(TEvent ev, Exception exception, ILambdaContext context)
         {
             try
             {
@@ -136,9 +136,9 @@ namespace MhLabs.PubSubExtensions.Consumer
             }
         }
 
-        protected virtual async Task PreparePubSubMessage(TEventType ev)
+        protected virtual async Task PreparePubSubMessage(TEvent ev)
         {
-            if (typeof(TEventType) != typeof(SQSEvent) && typeof(TEventType) != typeof(SNSEvent))
+            if (typeof(TEvent) != typeof(SQSEvent) && typeof(TEvent) != typeof(SNSEvent))
             {
                 return;
             }
@@ -233,13 +233,12 @@ namespace MhLabs.PubSubExtensions.Consumer
                 {
                     LambdaLogger.Log($"mathem.env:sns.message_attributes:{string.Join(",", record.Sns.MessageAttributes.SelectMany(p => $"{p.Key}={p.Value?.Value?.Replace("=", "%3D")}"))}");
                 }
-
             }
         }
 
         private async Task<string> ReadStream(Stream responseStream)
         {
-            using(var reader = new StreamReader(responseStream))
+            using (var reader = new StreamReader(responseStream))
             {
                 return await reader.ReadToEndAsync();
             }
