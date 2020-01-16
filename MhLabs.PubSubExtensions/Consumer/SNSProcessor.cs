@@ -13,7 +13,8 @@ namespace MhLabs.PubSubExtensions.Consumer
     public abstract class SNSProcessor<TMessage> : MessageProcessorBase<SNSEvent, TMessage>
         where TMessage : class, new()
     {
-        protected SNSProcessor(IAmazonS3 s3Client = null, ILoggerFactory loggerFactory = null) : base(s3Client, loggerFactory)
+        protected SNSProcessor(IAmazonS3 s3Client = null, ILoggerFactory loggerFactory = null)
+            : base(s3Client, loggerFactory)
         {
             RegisterExtractor(new SNSMessageExtractor<TMessage>());
         }
@@ -44,7 +45,7 @@ namespace MhLabs.PubSubExtensions.Consumer
                         record.Sns.MessageAttributes.Add(attribute.Key, attribute.Value);
                     }
                 }
-                if (record.Sns.MessageAttributes.Any())
+                if (record.Sns.MessageAttributes.Count > 0)
                 {
                     LambdaLogger.Log($"mathem.env:sns.message_attributes:{string.Join(",", record.Sns.MessageAttributes.SelectMany(p => $"{p.Key}={p.Value?.Value?.Replace("=", "%3D")}"))}");
                 }

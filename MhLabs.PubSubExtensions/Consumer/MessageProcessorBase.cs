@@ -45,7 +45,7 @@ namespace MhLabs.PubSubExtensions.Consumer
         {
             S3Client = s3Client ?? new AmazonS3Client(RegionEndpoint.GetBySystemName(Environment.GetEnvironmentVariable("AWS_REGION")));
 
-            _logger = loggerFactory == null ? NullLogger.Instance : loggerFactory.CreateLogger(GetType());
+            _logger = loggerFactory?.CreateLogger(GetType()) ?? NullLogger.Instance;
         }
 
         [LambdaSerializer(typeof(Amazon.Lambda.Serialization.Json.JsonSerializer))]
