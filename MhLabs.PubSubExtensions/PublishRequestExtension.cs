@@ -38,15 +38,15 @@ namespace MhLabs.PubSubExtensions
 
         internal static string GetExecutionName(this PublishRequest request)
         {
-            return request.MessageAttributes.ContainsKey(Constants.StepFunctionsName)
-                ? request.MessageAttributes[Constants.StepFunctionsName].StringValue
-                : Guid.NewGuid().ToString();
+            return request.MessageAttributes.ContainsKey(Constants.StepFunctionsName) ?
+                request.MessageAttributes[Constants.StepFunctionsName].StringValue :
+                Guid.NewGuid().ToString();
         }
 
         internal static bool ShouldSuppressExecutionAlreadyExistsException(this PublishRequest request)
         {
             return request.MessageAttributes.ContainsKey(Constants.SuppressExecutionAlreadyExistsException) &&
-                   request.MessageAttributes[Constants.SuppressExecutionAlreadyExistsException].StringValue == true.ToString();
+                request.MessageAttributes[Constants.SuppressExecutionAlreadyExistsException].StringValue == true.ToString();
         }
 
         public static void SuppressExecutionAlreadyExistsException(this PublishRequest request, bool suppress = true)
@@ -54,7 +54,7 @@ namespace MhLabs.PubSubExtensions
             request.MessageAttributes.Add(Constants.SuppressExecutionAlreadyExistsException, new MessageAttributeValue
             {
                 DataType = "String",
-                StringValue = suppress.ToString()
+                    StringValue = suppress.ToString()
             });
         }
         public static void SetVersion(this PublishRequest request, string version)
@@ -62,7 +62,7 @@ namespace MhLabs.PubSubExtensions
             request.MessageAttributes.Add(Constants.Version, new MessageAttributeValue
             {
                 DataType = "String",
-                StringValue = version
+                    StringValue = version
             });
         }
 
@@ -70,13 +70,13 @@ namespace MhLabs.PubSubExtensions
         {
             var model = new MutationModel<T>
             {
-                OldImage = oldImage,
-                NewImage = newImage,
-                EventType = eventType
+            OldImage = oldImage,
+            NewImage = newImage,
+            EventType = eventType
             };
 
             request.Message = JsonConvert.SerializeObject(model);
-            
+
             var diff = model.Diff();
 
             request.MessageAttributes.Add(
@@ -84,9 +84,17 @@ namespace MhLabs.PubSubExtensions
                 new MessageAttributeValue
                 {
                     DataType = "String.Array",
-                    StringValue = JsonConvert.SerializeObject(diff)
+                        StringValue = JsonConvert.SerializeObject(diff)
                 }
             );
+        }
+
+        public static void AddConditionalAttribute<T>(this PublishRequest request, T obj, string key, Func<T, bool> func, Func<T, object> value = null, MessageAttributeDataType dataType = null)
+        {
+            if (func(obj))
+            {
+                request.MessageAttributes.Add(key, new MessageAttributeValue { DataType = dataType?.Type ?? MessageAttributeDataType.String.Type, StringValue = value != null ? value(obj)?.ToString() : "true" });
+            }
         }
     }
 }
