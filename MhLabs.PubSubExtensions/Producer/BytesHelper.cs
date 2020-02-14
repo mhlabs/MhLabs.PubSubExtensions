@@ -10,7 +10,7 @@ namespace MhLabs.PubSubExtensions.Producer
 {
     public static class BytesHelper
     {
-        private const int DEFAULT_MESSAGE_SIZE_THRESHOLD = 262144;
+        private const int DEFAULT_MESSAGE_SIZE_THRESHOLD = 256000;
         public static bool TooLarge(PublishRequest request, int maxSize = DEFAULT_MESSAGE_SIZE_THRESHOLD)
         {
             return TooLarge(request.Message, request.MessageAttributes.Select(p => new KeyValuePair<string, string>(p.Key, p.Value.StringValue)).ToDictionary(ks => ks.Key, x => x.Value), maxSize);
