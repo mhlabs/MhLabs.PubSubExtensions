@@ -89,12 +89,14 @@ public static class DiffExtension
                 {
                     try
                     {
-                        var obj1 = enum1[i];
-                        var obj2 = enum2[i];
-                        if (!obj1.Equals(obj2))
+                        var obj1 = enum1?[i];
+                        var obj2 = enum2?[i];
+
+                        if (obj1 != obj2)
                         {
-                            return new List<string>() { prefix };
+                            return new List<string> { prefix };
                         }
+
                     }
                     catch (Exception ex)
                     {
