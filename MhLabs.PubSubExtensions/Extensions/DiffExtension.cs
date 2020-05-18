@@ -92,7 +92,7 @@ public static class DiffExtension
                         var obj1 = enum1.Count > i ? enum1[i] : null;
                         var obj2 = enum2.Count > i ? enum2[i] : null;
 
-                        if (obj1 != obj2)
+                        if (!obj1.Equals(obj2))
                         {
                             return new List<string> { prefix };
                         }
