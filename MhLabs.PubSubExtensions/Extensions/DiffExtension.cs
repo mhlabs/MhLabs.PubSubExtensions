@@ -83,14 +83,14 @@ public static class DiffExtension
                     return new List<string>() { prefix };
                 }
 
-                var enum1 = (IList<object>)val1;
-                var enum2 = (IList<object>)val2;
-                for (var i = 0; i < (enum1 ?? enum2)?.Count; i++)
+                var enum1 = (IList)val1;
+                var enum2 = (IList)val2;
+                for (var i = 0; i < (enum1 ?? enum2).Count; i++)
                 {
                     try
                     {
-                        var obj1 = enum1.ElementAtOrDefault(i);
-                        var obj2 = enum2.ElementAtOrDefault(i);
+                        var obj1 = enum1.Count > i ? enum1[i] : null;
+                        var obj2 = enum2.Count > i ? enum2[i] : null;
 
                         if (obj1 != obj2)
                         {
