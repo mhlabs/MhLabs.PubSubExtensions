@@ -16,7 +16,7 @@ namespace MhLabs.PubSubExtensions.Tests
             var obj1 = new TestItem { Name = "TestName", Age = 10, CreationDate = DateTime.Today, Address = new TestAddress { AddressRow1 = "B" } };
             var obj2 = new TestItem { Name = "TestName", Age = 10, CreationDate = DateTime.Today, Address = new TestAddress { AddressRow1 = "B" } };
             var model = new MutationModel<TestItem> { OldImage = obj1, NewImage = obj2 };
-            Assert.Equal(0, model.Diff().Count);
+            Assert.Empty(model.Diff());
         }
 
         [Fact]
@@ -25,7 +25,7 @@ namespace MhLabs.PubSubExtensions.Tests
             var obj1 = new TestItem { Name = null, Age = 10, CreationDate = DateTime.Today, Address = new TestAddress { AddressRow1 = "B" } };
             var obj2 = new TestItem { Name = null, Age = 10, CreationDate = DateTime.Today, Address = new TestAddress { AddressRow1 = "B" } };
             var model = new MutationModel<TestItem> { OldImage = obj1, NewImage = obj2 };
-            Assert.Equal(0, model.Diff().Count);
+            Assert.Empty(model.Diff());
         }
         [Fact]
         public void LHSPropertyNull()
@@ -33,7 +33,7 @@ namespace MhLabs.PubSubExtensions.Tests
             var obj1 = new TestItem { Name = null, Age = 10, CreationDate = DateTime.Today, Address = new TestAddress { AddressRow1 = "B" } };
             var obj2 = new TestItem { Name = "Test", Age = 10, CreationDate = DateTime.Today, Address = new TestAddress { AddressRow1 = "B" } };
             var model = new MutationModel<TestItem> { OldImage = obj1, NewImage = obj2 };
-            Assert.Equal(1, model.Diff().Count);
+            Assert.Single(model.Diff());
         }
         [Fact]
         public void RHSPropertiesNull()
@@ -41,7 +41,7 @@ namespace MhLabs.PubSubExtensions.Tests
             var obj1 = new TestItem { Name = "Test", Age = 10, CreationDate = DateTime.Today, Address = new TestAddress { AddressRow1 = "B" } };
             var obj2 = new TestItem { Name = null, Age = 10, CreationDate = DateTime.Today, Address = new TestAddress { AddressRow1 = "B" } };
             var model = new MutationModel<TestItem> { OldImage = obj1, NewImage = obj2 };
-            Assert.Equal(1, model.Diff().Count);
+            Assert.Single(model.Diff());
         }
 
         [Fact]
@@ -50,7 +50,7 @@ namespace MhLabs.PubSubExtensions.Tests
             TestItem obj1 = null;
             var obj2 = new TestItem { Name = "Test", Age = 10, CreationDate = DateTime.Today, Address = new TestAddress { AddressRow1 = "B" } };
             var model = new MutationModel<TestItem> { OldImage = obj1, NewImage = obj2 };
-            Assert.NotEqual(0, model.Diff().Count);
+            Assert.NotEmpty(model.Diff());
         }
         [Fact]
         public void NullToRight()
@@ -58,7 +58,7 @@ namespace MhLabs.PubSubExtensions.Tests
             var obj1 = new TestItem { Name = "Test", Age = 10, CreationDate = DateTime.Today, Address = new TestAddress { AddressRow1 = "B" } };
             TestItem obj2 = null;
             var model = new MutationModel<TestItem> { OldImage = obj1, NewImage = obj2 };
-            Assert.NotEqual(0, model.Diff().Count);
+            Assert.NotEmpty(model.Diff());
         }
 
         [Fact]
@@ -68,7 +68,7 @@ namespace MhLabs.PubSubExtensions.Tests
             var obj2 = new TestItem { Name = "Test2", Age = 10, CreationDate = DateTime.Today, Address = new TestAddress { AddressRow1 = "B" } };
 
             var model = new MutationModel<TestItem> { OldImage = obj1, NewImage = obj2 };
-            Assert.Equal(1, model.Diff().Count);
+            Assert.Single(model.Diff());
             Assert.Equal("Name", model.Diff()[0]);
         }
 
@@ -81,8 +81,8 @@ namespace MhLabs.PubSubExtensions.Tests
             var model = new MutationModel<TestItem> { OldImage = obj1, NewImage = obj2 };
             var diff = model.Diff();
             Assert.Equal(2, diff.Count);
-            Assert.True(diff.Any(p => p == "Address"));
-            Assert.True(diff.Any(p => p == "Address.AddressRow1"));
+            Assert.Contains(diff, p => p == "Address");
+            Assert.Contains(diff, p => p == "Address.AddressRow1");
         }
 
         [Fact]
@@ -100,8 +100,8 @@ namespace MhLabs.PubSubExtensions.Tests
             var model = new MutationModel<TestItem> { OldImage = obj1, NewImage = obj2 };
             var diff = model.Diff();
             Assert.Equal(2, diff.Count);
-            Assert.True(diff.Any(p => p == "Address"));
-            Assert.True(diff.Any(p => p == "Address.AddressRow1"));
+            Assert.Contains(diff, p => p == "Address");
+            Assert.Contains(diff, p => p == "Address.AddressRow1");
         }
 
         [Fact]
@@ -119,11 +119,11 @@ namespace MhLabs.PubSubExtensions.Tests
             var model = new MutationModel<TestItem> { OldImage = obj1, NewImage = obj2 };
             var diff = model.Diff();
             Assert.Equal(5, diff.Count);
-            Assert.True(diff.Any(p => p == "Address"));
-            Assert.True(diff.Any(p => p == "Address.AddressRow1"));
-            Assert.True(diff.Any(p => p == "Minis"));
-            Assert.True(diff.Any(p => p == "Minis.Id"));
-            Assert.True(diff.Any(p => p == "Minis.Message"));
+            Assert.Contains(diff, p => p == "Address");
+            Assert.Contains(diff, p => p == "Address.AddressRow1");
+            Assert.Contains(diff, p => p == "Minis");
+            Assert.Contains(diff, p => p == "Minis.Id");
+            Assert.Contains(diff, p => p == "Minis.Message");
         }
 
         [Fact]
@@ -142,11 +142,11 @@ namespace MhLabs.PubSubExtensions.Tests
             var model = new MutationModel<TestItem> { OldImage = obj1, NewImage = obj2 };
             var diff = model.Diff();
             Assert.Equal(5, diff.Count);
-            Assert.True(diff.Any(p => p == "Address"));
-            Assert.True(diff.Any(p => p == "Address.AddressRow1"));
-            Assert.True(diff.Any(p => p == "Minis"));
-            Assert.True(diff.Any(p => p == "Minis.Id"));
-            Assert.True(diff.Any(p => p == "Minis.Message"));
+            Assert.Contains(diff, p => p == "Address");
+            Assert.Contains(diff, p => p == "Address.AddressRow1");
+            Assert.Contains(diff, p => p == "Minis");
+            Assert.Contains(diff, p => p == "Minis.Id");
+            Assert.Contains(diff, p => p == "Minis.Message");
         }
 
 
@@ -167,12 +167,11 @@ namespace MhLabs.PubSubExtensions.Tests
             var model = new MutationModel<TestItem> { OldImage = obj1, NewImage = obj2 };
             var diff = model.Diff();
             Assert.Equal(5, diff.Count);
-            Assert.True(diff.Any(p => p == "Address"));
-            Assert.True(diff.Any(p => p == "Address.AddressRow1"));
-            Assert.True(diff.Any(p => p == "Minis"));
-            Assert.True(diff.Any(p => p == "Minis.Id"));
-            Assert.True(diff.Any(p => p == "Minis.Message"));
-
+            Assert.Contains(diff, p => p == "Address");
+            Assert.Contains(diff, p => p == "Address.AddressRow1");
+            Assert.Contains(diff, p => p == "Minis");
+            Assert.Contains(diff, p => p == "Minis.Id");
+            Assert.Contains(diff, p => p == "Minis.Message");
         }
 
         [Fact]
@@ -191,33 +190,32 @@ namespace MhLabs.PubSubExtensions.Tests
             var model = new MutationModel<TestItem> { OldImage = obj1, NewImage = obj2 };
             var diff = model.Diff();
             Assert.Equal(5, diff.Count);
-            Assert.True(diff.Any(p => p == "Address"));
-            Assert.True(diff.Any(p => p == "Address.AddressRow1"));
-            Assert.True(diff.Any(p => p == "Minis"));
-            Assert.True(diff.Any(p => p == "Minis.Id"));
-            Assert.True(diff.Any(p => p == "Minis.Message"));
+            Assert.Contains(diff, p => p == "Address");
+            Assert.Contains(diff, p => p == "Address.AddressRow1");
+            Assert.Contains(diff, p => p == "Minis");
+            Assert.Contains(diff, p => p == "Minis.Id");
+            Assert.Contains(diff, p => p == "Minis.Message");
         }
 
         [Fact]
         public void NestedListObjectNullToRight()
         {
             var obj1 = new TestItem { Name = "Test", Age = 10, CreationDate = DateTime.Today, Address = new TestAddress { AddressRow1 = "B" } };
-            
+
             var fixture = new Fixture();
             obj1.Enums = new List<TestEnum>() {
                 TestEnum.One,
                 TestEnum.Two,
                 TestEnum.Three
             };
-            
+
             var model = new MutationModel<TestItem> { OldImage = obj1, NewImage = null };
             var diff = model.Diff();
             Assert.Equal(7, diff.Count);
-            Assert.True(diff.Any(p => p == "Address"));
-            Assert.True(diff.Any(p => p == "Address.AddressRow1"));
-            Assert.True(diff.Any(p => p == "Enums"));
+            Assert.Contains(diff, p => p == "Address");
+            Assert.Contains(diff, p => p == "Address.AddressRow1");
+            Assert.Contains(diff, p => p == "Enums");
         }
-
 
         [Fact]
         public void NestedDictionaryNotChanged()
@@ -226,7 +224,9 @@ namespace MhLabs.PubSubExtensions.Tests
             var obj2 = new TestItem { Name = "Test", Age = 10, CreationDate = DateTime.Today, Address = new TestAddress { AddressRow1 = "C" } };
 
             var fixture = new Fixture();
-            var minisDictionary = new Dictionary<string, TestMiniItem>(fixture.CreateMany<KeyValuePair<string, TestMiniItem>>());
+
+            var minisDictionary = new Dictionary<string, TestMiniItem>();
+            fixture.CreateMany<KeyValuePair<string, TestMiniItem>>().ToList().ForEach(kvp => minisDictionary.Add(kvp.Key, kvp.Value));
 
             obj1.MinisDictionary = minisDictionary;
             obj2.MinisDictionary = minisDictionary;
@@ -234,8 +234,8 @@ namespace MhLabs.PubSubExtensions.Tests
             var model = new MutationModel<TestItem> { OldImage = obj1, NewImage = obj2 };
             var diff = model.Diff();
             Assert.Equal(2, diff.Count);
-            Assert.True(diff.Any(p => p == "Address"));
-            Assert.True(diff.Any(p => p == "Address.AddressRow1"));
+            Assert.Contains(diff, p => p == "Address");
+            Assert.Contains(diff, p => p == "Address.AddressRow1");
         }
 
         [Fact]
@@ -245,7 +245,9 @@ namespace MhLabs.PubSubExtensions.Tests
             var obj2 = new TestItem { Name = "Test", Age = 10, CreationDate = DateTime.Today, Address = new TestAddress { AddressRow1 = "C" } };
 
             var fixture = new Fixture();
-            var minisDictionary = new Dictionary<string, TestMiniItem>(fixture.CreateMany<KeyValuePair<string, TestMiniItem>>());
+
+            var minisDictionary = new Dictionary<string, TestMiniItem>();
+            fixture.CreateMany<KeyValuePair<string, TestMiniItem>>().ToList().ForEach(kvp => minisDictionary.Add(kvp.Key, kvp.Value));
 
             obj1.MinisDictionary = minisDictionary;
 
@@ -255,11 +257,11 @@ namespace MhLabs.PubSubExtensions.Tests
             var model = new MutationModel<TestItem> { OldImage = obj1, NewImage = obj2 };
             var diff = model.Diff();
             Assert.Equal(5, diff.Count);
-            Assert.True(diff.Any(p => p == "Address"));
-            Assert.True(diff.Any(p => p == "Address.AddressRow1"));
-            Assert.True(diff.Any(p => p == "MinisDictionary"));
-            Assert.True(diff.Any(p => p == "MinisDictionary.Id"));
-            Assert.True(diff.Any(p => p == "MinisDictionary.Message"));
+            Assert.Contains(diff, p => p == "Address");
+            Assert.Contains(diff, p => p == "Address.AddressRow1");
+            Assert.Contains(diff, p => p == "MinisDictionary");
+            Assert.Contains(diff, p => p == "MinisDictionary.Id");
+            Assert.Contains(diff, p => p == "MinisDictionary.Message");
         }
 
         [Fact]
@@ -269,8 +271,11 @@ namespace MhLabs.PubSubExtensions.Tests
             var obj2 = new TestItem { Name = "Test", Age = 10, CreationDate = DateTime.Today, Address = new TestAddress { AddressRow1 = "C" } };
 
             var fixture = new Fixture();
-            var minisDictionary = new Dictionary<string, TestMiniItem>(fixture.CreateMany<KeyValuePair<string, TestMiniItem>>());
-            var minisDictionary2 = new Dictionary<string, TestMiniItem>(fixture.CreateMany<KeyValuePair<string, TestMiniItem>>());
+            var minisDictionary = new Dictionary<string, TestMiniItem>();
+            fixture.CreateMany<KeyValuePair<string, TestMiniItem>>().ToList().ForEach(kvp => minisDictionary.Add(kvp.Key, kvp.Value));
+
+            var minisDictionary2 = new Dictionary<string, TestMiniItem>();
+            fixture.CreateMany<KeyValuePair<string, TestMiniItem>>().ToList().ForEach(kvp => minisDictionary2.Add(kvp.Key, kvp.Value));
 
             obj1.MinisDictionary = minisDictionary;
             obj2.MinisDictionary = minisDictionary2;
@@ -278,12 +283,11 @@ namespace MhLabs.PubSubExtensions.Tests
             var model = new MutationModel<TestItem> { OldImage = obj1, NewImage = obj2 };
             var diff = model.Diff();
             Assert.Equal(5, diff.Count);
-            Assert.True(diff.Any(p => p == "Address"));
-            Assert.True(diff.Any(p => p == "Address.AddressRow1"));
-            Assert.True(diff.Any(p => p == "MinisDictionary"));
-            Assert.True(diff.Any(p => p == "MinisDictionary.Id"));
-            Assert.True(diff.Any(p => p == "MinisDictionary.Message"));
-
+            Assert.Contains(diff, p => p == "Address");
+            Assert.Contains(diff, p => p == "Address.AddressRow1");
+            Assert.Contains(diff, p => p == "MinisDictionary");
+            Assert.Contains(diff, p => p == "MinisDictionary.Id");
+            Assert.Contains(diff, p => p == "MinisDictionary.Message");
         }
 
         [Fact]
@@ -296,17 +300,20 @@ namespace MhLabs.PubSubExtensions.Tests
 
 
             obj1.MinisDictionary = null;
-            obj2.MinisDictionary = new Dictionary<string, TestMiniItem>(fixture.CreateMany<KeyValuePair<string, TestMiniItem>>());
+
+            var minisDictionary = new Dictionary<string, TestMiniItem>();
+            fixture.CreateMany<KeyValuePair<string, TestMiniItem>>().ToList().ForEach(kvp => minisDictionary.Add(kvp.Key, kvp.Value));
+
+            obj2.MinisDictionary = minisDictionary;
 
             var model = new MutationModel<TestItem> { OldImage = obj1, NewImage = obj2 };
             var diff = model.Diff();
             Assert.Equal(5, diff.Count);
-            Assert.True(diff.Any(p => p == "Address"));
-            Assert.True(diff.Any(p => p == "Address.AddressRow1"));
-            Assert.True(diff.Any(p => p == "MinisDictionary"));
-            Assert.True(diff.Any(p => p == "MinisDictionary.Id"));
-            Assert.True(diff.Any(p => p == "MinisDictionary.Message"));
-
+            Assert.Contains(diff, p => p == "Address");
+            Assert.Contains(diff, p => p == "Address.AddressRow1");
+            Assert.Contains(diff, p => p == "MinisDictionary");
+            Assert.Contains(diff, p => p == "MinisDictionary.Id");
+            Assert.Contains(diff, p => p == "MinisDictionary.Message");
         }
         [Fact]
         public void NestedDictionaryNullToRight()
@@ -316,18 +323,20 @@ namespace MhLabs.PubSubExtensions.Tests
 
             var fixture = new Fixture();
 
-            obj1.MinisDictionary = new Dictionary<string, TestMiniItem>(fixture.CreateMany<KeyValuePair<string, TestMiniItem>>());
+            var minisDictionary = new Dictionary<string, TestMiniItem>();
+            fixture.CreateMany<KeyValuePair<string, TestMiniItem>>().ToList().ForEach(kvp => minisDictionary.Add(kvp.Key, kvp.Value));
+
+            obj1.MinisDictionary = minisDictionary;
             obj2.MinisDictionary = null;
 
             var model = new MutationModel<TestItem> { OldImage = obj1, NewImage = obj2 };
             var diff = model.Diff();
             Assert.Equal(5, diff.Count);
-            Assert.True(diff.Any(p => p == "Address"));
-            Assert.True(diff.Any(p => p == "Address.AddressRow1"));
-            Assert.True(diff.Any(p => p == "MinisDictionary"));
-            Assert.True(diff.Any(p => p == "MinisDictionary.Id"));
-            Assert.True(diff.Any(p => p == "MinisDictionary.Message"));
-
+            Assert.Contains(diff, p => p == "Address");
+            Assert.Contains(diff, p => p == "Address.AddressRow1");
+            Assert.Contains(diff, p => p == "MinisDictionary");
+            Assert.Contains(diff, p => p == "MinisDictionary.Id");
+            Assert.Contains(diff, p => p == "MinisDictionary.Message");
         }
 
         [Fact]
@@ -337,13 +346,13 @@ namespace MhLabs.PubSubExtensions.Tests
             var item = fixture.Create<TestItem>();
             var json = JsonConvert.SerializeObject(item);
             var item2 = JsonConvert.DeserializeObject<TestItem>(json);
-            
+
             item2.TestEnum = TestEnum.Three;
 
             var model = new MutationModel<TestItem> { OldImage = item, NewImage = item2 };
             var diff = model.Diff();
-            Assert.Equal(1, diff.Count);
-            Assert.True(diff.Any(p => p == "TestEnum"));
+            Assert.Single(diff);
+            Assert.Contains(diff, p => p == "TestEnum");
         }
         [Fact]
         public void DateTimeTest()
@@ -353,7 +362,7 @@ namespace MhLabs.PubSubExtensions.Tests
             var item2 = fixture.Create<TestDateTime>();
             var model = new MutationModel<TestDateTime> { OldImage = item, NewImage = item2 };
             var diff = model.Diff();
-            Assert.Equal(2, diff.Count);            
+            Assert.Equal(2, diff.Count);
         }
 
         [Fact]
@@ -365,13 +374,13 @@ namespace MhLabs.PubSubExtensions.Tests
 
             var json = JsonConvert.SerializeObject(item);
             var item2 = JsonConvert.DeserializeObject<TestItem>(json);
-            
+
             item2.Enums.Reverse();
 
             var model = new MutationModel<TestItem> { OldImage = item, NewImage = item2 };
             var diff = model.Diff();
-            Assert.Equal(1, diff.Count);
-            Assert.True(diff.Any(p => p == "Enums"));
+            Assert.Single(diff);
+            Assert.Contains(diff, p => p == "Enums");
         }
 
         [Fact]
@@ -383,7 +392,7 @@ namespace MhLabs.PubSubExtensions.Tests
 
             var model = new MutationModel<TestItem> { OldImage = item, NewImage = null };
             var diff = model.Diff();
-            Assert.True(diff.Any(p => p == "IntList"));
+            Assert.Contains(diff, p => p == "IntList");
         }
 
         [Fact]
@@ -398,7 +407,7 @@ namespace MhLabs.PubSubExtensions.Tests
 
             var model = new MutationModel<TestItem> { OldImage = item, NewImage = item2 };
             var diff = model.Diff();
-            Assert.False(diff.Any(p => p == "IntList"));
+            Assert.DoesNotContain(diff, p => p == "IntList");
         }
 
         [Fact]
@@ -414,8 +423,8 @@ namespace MhLabs.PubSubExtensions.Tests
 
             var model = new MutationModel<TestItem> { OldImage = item, NewImage = item2 };
             var diff = model.Diff();
-            Assert.Equal(1, diff.Count);
-            Assert.True(diff.Any(p => p == "IntList"));
+            Assert.Single(diff);
+            Assert.Contains(diff, p => p == "IntList");
         }
 
         [Fact]
@@ -427,7 +436,7 @@ namespace MhLabs.PubSubExtensions.Tests
 
             var model = new MutationModel<TestItem> { OldImage = item, NewImage = null };
             var diff = model.Diff();
-            Assert.True(diff.Any(p => p == "DoubleList"));
+            Assert.Contains(diff, p => p == "DoubleList");
         }
 
         [Fact]
@@ -442,7 +451,7 @@ namespace MhLabs.PubSubExtensions.Tests
 
             var model = new MutationModel<TestItem> { OldImage = item, NewImage = item2 };
             var diff = model.Diff();
-            Assert.False(diff.Any(p => p == "DoubleList"));
+            Assert.DoesNotContain(diff, p => p == "DoubleList");
         }
 
         [Fact]
@@ -458,8 +467,8 @@ namespace MhLabs.PubSubExtensions.Tests
 
             var model = new MutationModel<TestItem> { OldImage = item, NewImage = item2 };
             var diff = model.Diff();
-            Assert.Equal(1, diff.Count);
-            Assert.True(diff.Any(p => p == "DoubleList"));
+            Assert.Single(diff);
+            Assert.Contains(diff, p => p == "DoubleList");
         }
 
         [Fact]
@@ -471,7 +480,7 @@ namespace MhLabs.PubSubExtensions.Tests
 
             var model = new MutationModel<TestItem> { OldImage = item, NewImage = null };
             var diff = model.Diff();
-            Assert.True(diff.Any(p => p == "DateTimeList"));
+            Assert.Contains(diff, p => p == "DateTimeList");
         }
 
         [Fact]
@@ -486,7 +495,7 @@ namespace MhLabs.PubSubExtensions.Tests
 
             var model = new MutationModel<TestItem> { OldImage = item, NewImage = item2 };
             var diff = model.Diff();
-            Assert.False(diff.Any(p => p == "DateTimeList"));
+            Assert.DoesNotContain(diff, p => p == "DateTimeList");
         }
 
         [Fact]
@@ -502,8 +511,8 @@ namespace MhLabs.PubSubExtensions.Tests
 
             var model = new MutationModel<TestItem> { OldImage = item, NewImage = item2 };
             var diff = model.Diff();
-            Assert.Equal(1, diff.Count);
-            Assert.True(diff.Any(p => p == "DateTimeList"));
+            Assert.Single(diff);
+            Assert.Contains(diff, p => p == "DateTimeList");
         }
 
         [Fact(Skip = "See issue https://github.com/mhlabs/MhLabs.PubSubExtensions/issues/4")]
@@ -519,8 +528,7 @@ namespace MhLabs.PubSubExtensions.Tests
             var model = new MutationModel<TestItemDynamic> { OldImage = item, NewImage = item2 };
             var diff = model.Diff();
             Assert.Equal(3, diff.Count);
-            Assert.True(diff.Any(p => p == "DynamicItem"));
-
+            Assert.Contains(diff, p => p == "DynamicItem");
         }
 
         [Fact]
@@ -535,7 +543,7 @@ namespace MhLabs.PubSubExtensions.Tests
             var model = new MutationModel<TestItemWithStringArray> { OldImage = item, NewImage = item2 };
             var diff = model.Diff();
 
-            Assert.Equal(0, diff.Count);
+            Assert.Empty(diff);
         }
     }
 
@@ -594,8 +602,8 @@ namespace MhLabs.PubSubExtensions.Tests
     public class TestAddress
     {
         public string AddressRow1 { get; set; }
-    }    
-    
+    }
+
     public class TestDateTime
     {
         public DateTime DateTime { get; set; }

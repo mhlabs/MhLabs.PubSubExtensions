@@ -64,7 +64,7 @@ namespace MhLabs.PubSubExtensions.Tests
             var response = await _client.PublishAsync(_request, StateMachineTestArn);
 
             // Assert
-            Assert.Equal(response.HttpStatusCode, HttpStatusCode.OK);
+            Assert.Equal(HttpStatusCode.OK, response.HttpStatusCode);
         }
 
         [Fact]
@@ -81,7 +81,7 @@ namespace MhLabs.PubSubExtensions.Tests
             request.AddMutation(obj1, obj2);
 
             // Assert
-            Assert.Equal(0, JsonConvert.DeserializeObject<List<string>>(request.MessageAttributes[Constants.UpdatedProperties].StringValue).Count);
+            Assert.Empty(JsonConvert.DeserializeObject<List<string>>(request.MessageAttributes[Constants.UpdatedProperties].StringValue));
         }
 
         [Fact]
@@ -99,7 +99,7 @@ namespace MhLabs.PubSubExtensions.Tests
 
             // Assert
             var diff = JsonConvert.DeserializeObject<List<string>>(request.MessageAttributes[Constants.UpdatedProperties].StringValue);
-            Assert.Equal(1, diff.Count);
+            Assert.Single(diff);
             Assert.Equal("Name", diff[0]);
         }
 
