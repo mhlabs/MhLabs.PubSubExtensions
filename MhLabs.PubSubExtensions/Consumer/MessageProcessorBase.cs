@@ -112,7 +112,7 @@ namespace MhLabs.PubSubExtensions.Consumer
             ErrorHandledByConsumer
         }
 
-        private void LogError(TEventType ev, Exception exception, ILambdaContext context)
+        protected void LogError(TEventType ev, Exception exception, ILambdaContext context)
         {
             try
             {
