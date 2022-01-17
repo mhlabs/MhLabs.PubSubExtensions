@@ -11,7 +11,7 @@ using Microsoft.Extensions.Logging;
 
 namespace MhLabs.PubSubExtensions.Consumer
 {
-    public abstract class SQSMessageProcessorBase<TMessageType> : MessageProcessorBase<SQSEvent, TMessageType> where TMessageType : class, new()
+    public abstract class SQSMessagePartialFailureProcessorBase<TMessageType> : MessageProcessorBase<SQSEvent, TMessageType> where TMessageType : class, new()
     {
         private IMessageExtractor<SQSMessageEnvelope<TMessageType>> _messageExtractor;
 
@@ -22,7 +22,7 @@ namespace MhLabs.PubSubExtensions.Consumer
             throw new NotImplementedException();
         }
 
-        protected SQSMessageProcessorBase(IAmazonS3 s3Client = null, ILoggerFactory loggerFactory = null) : base(s3Client, loggerFactory)
+        protected SQSMessagePartialFailureProcessorBase(IAmazonS3 s3Client = null, ILoggerFactory loggerFactory = null) : base(s3Client, loggerFactory)
         {
             _messageExtractor = new SQSMessageExtractorForPartialFailure<TMessageType>();
         }
