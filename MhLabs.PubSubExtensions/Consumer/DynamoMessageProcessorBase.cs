@@ -23,6 +23,11 @@ namespace MhLabs.PubSubExtensions.Consumer
 
         protected abstract Task HandleEvent(IEnumerable<TMessageType> items, ILambdaContext context);
 
+        protected virtual Task<IEnumerable<TMessageType>> ExtractEventBody<TEventType>(TEventType ev)
+        {
+            return Task.FromResult(default(IEnumerable<TMessageType>));
+        }
+
         protected virtual async Task HandleRawEvent(DynamoDBEvent items, ILambdaContext context)
         {
             await Task.CompletedTask;
@@ -39,7 +44,9 @@ namespace MhLabs.PubSubExtensions.Consumer
             try
             {
                 await PreparePubSubMessage(ev);
-                var rawData = await _messageExtractor.ExtractEventBody(ev);
+                var rawData = _messageExtractor == null ? 
+                    await ExtractEventBody(ev) : 
+                    await _messageExtractor.ExtractEventBody(ev);
 
                 await HandleEvent(rawData, context);
                 await HandleRawEvent(ev, context);
