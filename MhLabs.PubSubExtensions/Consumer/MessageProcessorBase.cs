@@ -54,7 +54,7 @@ namespace MhLabs.PubSubExtensions.Consumer
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Exception during LogError: {ex}");
+                context.Logger.Log($"Exception during LogError: {ex}");
             }
         }
 

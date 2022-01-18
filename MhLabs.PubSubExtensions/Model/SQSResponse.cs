@@ -6,7 +6,7 @@ namespace MhLabs.PubSubExtensions.Model
     public class SQSResponse
     {
         [JsonProperty(PropertyName = "batchItemFailures")]
-        public List<BatchItemFailure> BatchItemFailures { get; set; }
+        public List<BatchItemFailure> BatchItemFailures { get; set; } = new List<BatchItemFailure>();
     }
 
     public class BatchItemFailure

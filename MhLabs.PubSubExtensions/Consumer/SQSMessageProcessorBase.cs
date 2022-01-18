@@ -54,7 +54,7 @@ namespace MhLabs.PubSubExtensions.Consumer
                 var rawData = await _messageExtractor.ExtractEventBody(ev);
 
                 var response = await HandleEvent(rawData, context);
-                var responseFromRaw = await HandleEvent(rawData, context);
+                var responseFromRaw = await HandleRawEvent(ev, context);
 
                 var failures = new List<BatchItemFailure>();
                 failures.AddRange(response.BatchItemFailures);
