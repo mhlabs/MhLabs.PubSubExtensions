@@ -12,161 +12,171 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Newtonsoft.Json;
 
-namespace MhLabs.PubSubExtensions.Consumer;
-
-public abstract class MessageProcessorBase<TEventType>
+namespace MhLabs.PubSubExtensions.Consumer
 {
-    private readonly IAmazonS3 _s3Client;
-    private readonly ILogger _logger;
-
-    protected MessageProcessorBase(IAmazonS3 s3Client = null, ILoggerFactory loggerFactory = null)
+    public abstract class MessageProcessorBase<TEventType>
     {
-        _s3Client = s3Client ?? new AmazonS3Client(RegionEndpoint.GetBySystemName(Environment.GetEnvironmentVariable("AWS_REGION")));
+        private readonly IAmazonS3 _s3Client;
+        private readonly ILogger _logger;
 
-       _logger = loggerFactory == null ? NullLogger.Instance : loggerFactory.CreateLogger(GetType());
-    }
-
-    protected virtual Task<HandleErrorResult> HandleError(TEventType ev, ILambdaContext context, Exception exception)
-    {
-        return Task.FromResult(HandleErrorResult.Throw);
-    }
-
-    protected void LogError(TEventType ev, Exception exception, ILambdaContext context)
-    {
-        try
+        protected MessageProcessorBase(IAmazonS3 s3Client = null, ILoggerFactory loggerFactory = null)
         {
-            var payload = JsonConvert.SerializeObject(ev);
-            var eventType = ev?.GetType();
+            _s3Client = s3Client ??
+                        new AmazonS3Client(
+                            RegionEndpoint.GetBySystemName(Environment.GetEnvironmentVariable("AWS_REGION")));
 
-            if (_logger == NullLogger.Instance)
+            _logger = loggerFactory == null ? NullLogger.Instance : loggerFactory.CreateLogger(GetType());
+        }
+
+        protected virtual Task<HandleErrorResult> HandleError(TEventType ev, ILambdaContext context,
+            Exception exception)
+        {
+            return Task.FromResult(HandleErrorResult.Throw);
+        }
+
+        protected void LogError(TEventType ev, Exception exception, ILambdaContext context)
+        {
+            try
             {
-                context.Logger.Log($"Error when processing message type: {eventType}. Raw message: {payload}");
+                var payload = JsonConvert.SerializeObject(ev);
+                var eventType = ev?.GetType();
+
+                if (_logger == NullLogger.Instance)
+                {
+                    context.Logger.Log($"Error when processing message type: {eventType}. Raw message: {payload}");
+                }
+                else
+                {
+                    _logger.LogError(exception,
+                        "Error when processing message type: {TEventType}. Raw message: {TEvent}",
+                        eventType, payload);
+                }
             }
-            else
+            catch (Exception ex)
             {
-                _logger.LogError(exception,
-                    "Error when processing message type: {TEventType}. Raw message: {TEvent}",
-                    eventType, payload);
+                Console.WriteLine($"Exception during LogError: {ex}");
             }
         }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Exception during LogError: {ex}");
-        }
-    }
 
-    protected virtual async Task PreparePubSubMessage(TEventType ev)
-    {
-        if (typeof(TEventType) != typeof(SQSEvent) && typeof(TEventType) != typeof(SNSEvent))
+        protected virtual async Task PreparePubSubMessage(TEventType ev)
         {
-            return;
-        }
-
-        // This is ugly, but it's because SQS and SNS have different MessageAttribute references to the same data structure
-        if (ev is SQSEvent sqs)
-        {
-            await PreparePubSubMessage(sqs);
-            return;
-        }
-
-        if (ev is SNSEvent sns)
-        {
-            await PreparePubSubMessage(sns);
-            return;
-        }
-    }
-
-    protected virtual async Task PreparePubSubMessage(SQSEvent sqs)
-    {
-        LambdaLogger.Log($"Starting to process {sqs.Records.Count} SQS records...");
-        foreach (var record in sqs.Records)
-        {
-            if (!record.MessageAttributes.ContainsKey(Constants.PubSubBucket))
+            if (typeof(TEventType) != typeof(SQSEvent) && typeof(TEventType) != typeof(SNSEvent))
             {
-                continue;
+                return;
             }
 
-            LambdaLogger.Log($"The records message attributes contains key {Constants.PubSubBucket}");
-            var bucket = record.MessageAttributes[Constants.PubSubBucket].StringValue;
-            var key = record.MessageAttributes[Constants.PubSubKey].StringValue;
-            var s3Response = await _s3Client.GetObjectAsync(bucket, key);
-            var json = await ReadStream(s3Response.ResponseStream);
-            var snsEvent = JsonConvert.DeserializeObject<SNSEvent.SNSMessage>(json);
-            if (snsEvent?.Message != null && snsEvent.MessageAttributes != null)
+            // This is ugly, but it's because SQS and SNS have different MessageAttribute references to the same data structure
+            if (ev is SQSEvent sqs)
             {
-                record.Body = snsEvent.Message;
+                await PreparePubSubMessage(sqs);
+                return;
+            }
+
+            if (ev is SNSEvent sns)
+            {
+                await PreparePubSubMessage(sns);
+                return;
+            }
+        }
+
+        protected virtual async Task PreparePubSubMessage(SQSEvent sqs)
+        {
+            LambdaLogger.Log($"Starting to process {sqs.Records.Count} SQS records...");
+            foreach (var record in sqs.Records)
+            {
+                if (!record.MessageAttributes.ContainsKey(Constants.PubSubBucket))
+                {
+                    continue;
+                }
+
+                LambdaLogger.Log($"The records message attributes contains key {Constants.PubSubBucket}");
+                var bucket = record.MessageAttributes[Constants.PubSubBucket].StringValue;
+                var key = record.MessageAttributes[Constants.PubSubKey].StringValue;
+                var s3Response = await _s3Client.GetObjectAsync(bucket, key);
+                var json = await ReadStream(s3Response.ResponseStream);
+                var snsEvent = JsonConvert.DeserializeObject<SNSEvent.SNSMessage>(json);
+                if (snsEvent?.Message != null && snsEvent.MessageAttributes != null)
+                {
+                    record.Body = snsEvent.Message;
+
+                    LambdaLogger.Log("Adding SNS message attributes to record");
+                    foreach (var attribute in snsEvent.MessageAttributes)
+                    {
+                        if (!record.MessageAttributes.ContainsKey(attribute.Key))
+                        {
+                            record.MessageAttributes.Add(attribute.Key,
+                                new SQSEvent.MessageAttribute
+                                    {DataType = "String", StringValue = attribute.Value.Value});
+                        }
+                    }
+                }
+                else
+                {
+                    var sqsEvent = JsonConvert.DeserializeObject<SendMessageRequest>(json);
+                    record.Body = sqsEvent.MessageBody;
+
+                    LambdaLogger.Log("Adding SQS message attributes to record");
+                    foreach (var attribute in sqsEvent.MessageAttributes)
+                    {
+                        if (!record.MessageAttributes.ContainsKey(attribute.Key))
+                        {
+                            record.MessageAttributes.Add(attribute.Key,
+                                new SQSEvent.MessageAttribute
+                                    {DataType = "String", StringValue = attribute.Value.StringValue});
+                        }
+                    }
+                }
+            }
+        }
+
+        protected virtual async Task PreparePubSubMessage(SNSEvent sns)
+        {
+            LambdaLogger.Log($"Starting to process {sns.Records.Count} SNS records...");
+            foreach (var record in sns.Records)
+            {
+                if (!record.Sns.MessageAttributes.ContainsKey(Constants.PubSubBucket))
+                {
+                    continue;
+                }
+
+                LambdaLogger.Log($"The records message attributes contains key {Constants.PubSubBucket}");
+                var bucket = record.Sns.MessageAttributes[Constants.PubSubBucket].Value;
+                var key = record.Sns.MessageAttributes[Constants.PubSubKey].Value;
+                var s3Response = await _s3Client.GetObjectAsync(bucket, key);
+                var json = await ReadStream(s3Response.ResponseStream);
+                var snsEvent = JsonConvert.DeserializeObject<SNSEvent.SNSMessage>(json);
+                record.Sns.Message = snsEvent.Message;
 
                 LambdaLogger.Log("Adding SNS message attributes to record");
                 foreach (var attribute in snsEvent.MessageAttributes)
                 {
-                    if (!record.MessageAttributes.ContainsKey(attribute.Key))
+                    if (!record.Sns.MessageAttributes.ContainsKey(attribute.Key))
                     {
-                        record.MessageAttributes.Add(attribute.Key, new SQSEvent.MessageAttribute { DataType = "String", StringValue = attribute.Value.Value });
+                        record.Sns.MessageAttributes.Add(attribute.Key, attribute.Value);
                     }
                 }
-            }
-            else
-            {
-                var sqsEvent = JsonConvert.DeserializeObject<SendMessageRequest>(json);
-                record.Body = sqsEvent.MessageBody;
 
-                LambdaLogger.Log("Adding SQS message attributes to record");
-                foreach (var attribute in sqsEvent.MessageAttributes)
+                if (record.Sns.MessageAttributes.Any())
                 {
-                    if (!record.MessageAttributes.ContainsKey(attribute.Key))
-                    {
-                        record.MessageAttributes.Add(attribute.Key, new SQSEvent.MessageAttribute { DataType = "String", StringValue = attribute.Value.StringValue });
-                    }
+                    LambdaLogger.Log(
+                        $"mathem.env:sns.message_attributes:{string.Join(",", record.Sns.MessageAttributes.SelectMany(p => $"{p.Key}={p.Value?.Value?.Replace("=", "%3D")}"))}");
                 }
+
             }
         }
-    }
 
-    protected virtual async Task PreparePubSubMessage(SNSEvent sns)
-    {
-        LambdaLogger.Log($"Starting to process {sns.Records.Count} SNS records...");
-        foreach (var record in sns.Records)
+        private async Task<string> ReadStream(Stream responseStream)
         {
-            if (!record.Sns.MessageAttributes.ContainsKey(Constants.PubSubBucket))
+            using (var reader = new StreamReader(responseStream))
             {
-                continue;
+                return await reader.ReadToEndAsync();
             }
-
-            LambdaLogger.Log($"The records message attributes contains key {Constants.PubSubBucket}");
-            var bucket = record.Sns.MessageAttributes[Constants.PubSubBucket].Value;
-            var key = record.Sns.MessageAttributes[Constants.PubSubKey].Value;
-            var s3Response = await _s3Client.GetObjectAsync(bucket, key);
-            var json = await ReadStream(s3Response.ResponseStream);
-            var snsEvent = JsonConvert.DeserializeObject<SNSEvent.SNSMessage>(json);
-            record.Sns.Message = snsEvent.Message;
-
-            LambdaLogger.Log("Adding SNS message attributes to record");
-            foreach (var attribute in snsEvent.MessageAttributes)
-            {
-                if (!record.Sns.MessageAttributes.ContainsKey(attribute.Key))
-                {
-                    record.Sns.MessageAttributes.Add(attribute.Key, attribute.Value);
-                }
-            }
-            if (record.Sns.MessageAttributes.Any())
-            {
-                LambdaLogger.Log($"mathem.env:sns.message_attributes:{string.Join(",", record.Sns.MessageAttributes.SelectMany(p => $"{p.Key}={p.Value?.Value?.Replace("=", "%3D")}"))}");
-            }
-
         }
-    }
 
-    private async Task<string> ReadStream(Stream responseStream)
-    {
-        using(var reader = new StreamReader(responseStream))
+        protected enum HandleErrorResult
         {
-            return await reader.ReadToEndAsync();
+            Throw,
+            ErrorHandledByConsumer
         }
-    }
-
-    protected enum HandleErrorResult
-    {
-        Throw,
-        ErrorHandledByConsumer
     }
 }

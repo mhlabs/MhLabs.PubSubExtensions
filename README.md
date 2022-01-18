@@ -116,11 +116,60 @@ Also add a consumer Lambda resource to consume the queue:
 
 For SNS, SQS and Kinesis consumers, the message extraction and deserialization is performed on the base class. This to avoid boiletplate in your lambda handler. 
 ```
-public class SQSConsumer : MessageProcessorBase<SQSEvent, Model>
+public class SNSConsumer : SNSMessageMessageProcessorBase<Model>
 {
     protected override async Task HandleEvent(IEnumerable<Model> items, ILambdaContext context)
     {
         // Iterate through items
+    }
+}
+```
+For SQS you have the option of using partial batch failures. If you do not want to use them there is no need to return any data. See example below.
+```
+public class SQSConsumerWithoutPartialBatchFailure : SQSMessageMessageProcessorBase<Model>
+{
+    protected override async Task<SQSResponse> HandleEvent(IEnumerable<Model> items, ILambdaContext context)
+    {
+        // Iterate through items
+        
+        // No need to return anything 
+        return default;
+    }
+}
+```
+
+When using partial batch failures you will need to return the message ids of the failed message in the response from the lambda.
+```
+public class SQSConsumerWithPartialBatchFailure : SQSMessageProcessorBase<Model>
+{
+    // This tells the base class to use partial batch failure on exceptions as well
+    protected override Task<HandleErrorResult> HandleError(SQSEvent ev, ILambdaContext context, Exception exception)
+    {
+        return Task.FromResult(HandleErrorResult.ErrorHandledByConsumer);
+    }
+
+    protected override async Task<SQSResponse> HandleEvent(IEnumerable<SQSMessageEnvelope<Model>> items, ILambdaContext context)
+    {
+        var failures = new List<BatchItemFailure>();
+        foreach (var orderEvent in items)
+        {
+            try
+            {
+                // Do something with event
+            }
+            catch (System.Exception e)
+            {
+                // Add any failed messages to the batch failures
+                failures.Add(new BatchItemFailure
+                {
+                    ItemIdentifier = orderEvent.MessageId
+                });
+            }
+        }
+        return new SQSResponse
+        {
+            BatchItemFailures = failures
+        };
     }
 }
 ```

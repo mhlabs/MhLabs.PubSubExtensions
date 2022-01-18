@@ -1,11 +1,16 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.28010.2046
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31919.166
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MhLabs.PubSubExtensions", "MhLabs.PubSubExtensions\MhLabs.PubSubExtensions.csproj", "{04E5E7E7-EFA3-4DEF-A8A3-93C64972112C}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MhLabs.PubSubExtensions.Tests", "MhLabs.PubSubExtensions.Tests\MhLabs.PubSubExtensions.Tests.csproj", "{2C73B989-1D98-4EA8-8093-0DBAF947B75F}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{DF026519-102D-4C19-B295-63B4CDBDA3A2}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
