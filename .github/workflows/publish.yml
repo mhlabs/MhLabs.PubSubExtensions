@@ -1,21 +1,26 @@
-name: publish to nuget
-on:
-  push:
-    branches:
-      - master # Default release branch
+name: Test & Publish
+on: push
 jobs:
-  publish:
+  test:
     name: build, pack & publish
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-
-      # - name: Setup dotnet
-      #   uses: actions/setup-dotnet@v1
-      #   with:
-      #     dotnet-version: 3.1.200
-
-      # Publish
+      - name: Setup .NET Core
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 3.1.405
+      - name: Install dependencies
+        run: dotnet restore
+      - name: Run Unit Tests
+        run: dotnet test
+  publish:
+    name: build, pack & publish
+    needs: test
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    steps:
       - name: publish on version change
         id: publish_nuget
         uses: rohith/publish-nuget@v2
