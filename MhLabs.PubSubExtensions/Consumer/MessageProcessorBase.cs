@@ -1,118 +1,40 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Amazon;
 using Amazon.Lambda.Core;
-using Amazon.Lambda.KinesisEvents;
 using Amazon.Lambda.SNSEvents;
 using Amazon.Lambda.SQSEvents;
 using Amazon.S3;
 using Amazon.SQS.Model;
-using MhLabs.PubSubExtensions.Consumer.Extractors;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Newtonsoft.Json;
-using static Amazon.Lambda.SNSEvents.SNSEvent;
 
 namespace MhLabs.PubSubExtensions.Consumer
 {
-    public abstract class MessageProcessorBase<TEventType, TMessageType> where TMessageType : class, new()
+    public abstract class MessageProcessorBase<TEventType>
     {
-        private IMessageExtractor<TMessageType> _messageExtractor;
-
-#pragma warning disable CS0618 // Type or member is obsolete
-        private IMessageExtractor _deprecatedExtractor;
-#pragma warning restore CS0618 // Type or member is obsolete
-
-        protected abstract Task HandleEvent(IEnumerable<TMessageType> items, ILambdaContext context);
-
-        protected virtual async Task HandleRawEvent(TEventType items, ILambdaContext context)
-        {
-            await Task.CompletedTask;
-        }
-
         private readonly IAmazonS3 _s3Client;
         private readonly ILogger _logger;
 
-        protected void RegisterExtractor(IMessageExtractor<TMessageType> extractor)
-        {
-            _messageExtractor = extractor;
-        }
-
-        [Obsolete("Use IMessageExtractor<TMessageType> interface instead")]
-        protected void RegisterExtractor(IMessageExtractor extractor)
-        {
-            _deprecatedExtractor = extractor;
-        }
-
         protected MessageProcessorBase(IAmazonS3 s3Client = null, ILoggerFactory loggerFactory = null)
         {
-            _s3Client = s3Client ?? new AmazonS3Client(RegionEndpoint.GetBySystemName(Environment.GetEnvironmentVariable("AWS_REGION")));
-
-            if (typeof(TEventType) == typeof(SQSEvent))
-            {
-                _messageExtractor = new SQSMessageExtractor<TMessageType>();
-            }
-            else if (typeof(TEventType) == typeof(SNSEvent))
-            {
-                _messageExtractor = new SNSMessageExtractor<TMessageType>();
-            }
-            else if (typeof(TEventType) == typeof(KinesisEvent))
-            {
-                _messageExtractor = new KinesisMessageExtractor<TMessageType>();
-            }
-
-            _deprecatedExtractor = default;
+            _s3Client = s3Client ??
+                        new AmazonS3Client(
+                            RegionEndpoint.GetBySystemName(Environment.GetEnvironmentVariable("AWS_REGION")));
 
             _logger = loggerFactory == null ? NullLogger.Instance : loggerFactory.CreateLogger(GetType());
         }
 
-        [LambdaSerializer(typeof(Amazon.Lambda.Serialization.Json.JsonSerializer))]
-        public async Task Process(TEventType ev, ILambdaContext context)
-        {
-            try
-            {
-                await PreparePubSubMessage(ev);
-
-                IEnumerable<TMessageType> rawData;
-                if (_deprecatedExtractor != default)
-                {
-                    rawData = await _deprecatedExtractor.ExtractEventBody<TEventType, TMessageType>(ev);
-                }
-                else
-                {
-                    rawData = await _messageExtractor.ExtractEventBody(ev);
-                }
-
-                await HandleEvent(rawData, context);
-                await HandleRawEvent(ev, context);
-            }
-            catch (Exception exception)
-            {
-                LogError(ev, exception, context);
-
-                var result = await HandleError(ev, context, exception);
-                if (result == HandleErrorResult.Throw)
-                {
-                    throw;
-                }
-            }
-        }
-
-        protected virtual Task<HandleErrorResult> HandleError(TEventType ev, ILambdaContext context, Exception exception)
+        protected virtual Task<HandleErrorResult> HandleError(TEventType ev, ILambdaContext context,
+            Exception exception)
         {
             return Task.FromResult(HandleErrorResult.Throw);
         }
 
-        protected enum HandleErrorResult
-        {
-            Throw,
-            ErrorHandledByConsumer
-        }
-
-        private void LogError(TEventType ev, Exception exception, ILambdaContext context)
+        protected void LogError(TEventType ev, Exception exception, ILambdaContext context)
         {
             try
             {
@@ -132,7 +54,7 @@ namespace MhLabs.PubSubExtensions.Consumer
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Exception during LogError: {ex}");
+                context.Logger.Log($"Exception during LogError: {ex}");
             }
         }
 
@@ -172,7 +94,7 @@ namespace MhLabs.PubSubExtensions.Consumer
                 var key = record.MessageAttributes[Constants.PubSubKey].StringValue;
                 var s3Response = await _s3Client.GetObjectAsync(bucket, key);
                 var json = await ReadStream(s3Response.ResponseStream);
-                var snsEvent = JsonConvert.DeserializeObject<SNSMessage>(json);
+                var snsEvent = JsonConvert.DeserializeObject<SNSEvent.SNSMessage>(json);
                 if (snsEvent?.Message != null && snsEvent.MessageAttributes != null)
                 {
                     record.Body = snsEvent.Message;
@@ -182,7 +104,9 @@ namespace MhLabs.PubSubExtensions.Consumer
                     {
                         if (!record.MessageAttributes.ContainsKey(attribute.Key))
                         {
-                            record.MessageAttributes.Add(attribute.Key, new SQSEvent.MessageAttribute { DataType = "String", StringValue = attribute.Value.Value });
+                            record.MessageAttributes.Add(attribute.Key,
+                                new SQSEvent.MessageAttribute
+                                    {DataType = "String", StringValue = attribute.Value.Value});
                         }
                     }
                 }
@@ -196,7 +120,9 @@ namespace MhLabs.PubSubExtensions.Consumer
                     {
                         if (!record.MessageAttributes.ContainsKey(attribute.Key))
                         {
-                            record.MessageAttributes.Add(attribute.Key, new SQSEvent.MessageAttribute { DataType = "String", StringValue = attribute.Value.StringValue });
+                            record.MessageAttributes.Add(attribute.Key,
+                                new SQSEvent.MessageAttribute
+                                    {DataType = "String", StringValue = attribute.Value.StringValue});
                         }
                     }
                 }
@@ -218,7 +144,7 @@ namespace MhLabs.PubSubExtensions.Consumer
                 var key = record.Sns.MessageAttributes[Constants.PubSubKey].Value;
                 var s3Response = await _s3Client.GetObjectAsync(bucket, key);
                 var json = await ReadStream(s3Response.ResponseStream);
-                var snsEvent = JsonConvert.DeserializeObject<SNSMessage>(json);
+                var snsEvent = JsonConvert.DeserializeObject<SNSEvent.SNSMessage>(json);
                 record.Sns.Message = snsEvent.Message;
 
                 LambdaLogger.Log("Adding SNS message attributes to record");
@@ -229,9 +155,11 @@ namespace MhLabs.PubSubExtensions.Consumer
                         record.Sns.MessageAttributes.Add(attribute.Key, attribute.Value);
                     }
                 }
+
                 if (record.Sns.MessageAttributes.Any())
                 {
-                    LambdaLogger.Log($"mathem.env:sns.message_attributes:{string.Join(",", record.Sns.MessageAttributes.SelectMany(p => $"{p.Key}={p.Value?.Value?.Replace("=", "%3D")}"))}");
+                    LambdaLogger.Log(
+                        $"mathem.env:sns.message_attributes:{string.Join(",", record.Sns.MessageAttributes.SelectMany(p => $"{p.Key}={p.Value?.Value?.Replace("=", "%3D")}"))}");
                 }
 
             }
@@ -239,10 +167,16 @@ namespace MhLabs.PubSubExtensions.Consumer
 
         private async Task<string> ReadStream(Stream responseStream)
         {
-            using(var reader = new StreamReader(responseStream))
+            using (var reader = new StreamReader(responseStream))
             {
                 return await reader.ReadToEndAsync();
             }
+        }
+
+        protected enum HandleErrorResult
+        {
+            Throw,
+            ErrorHandledByConsumer
         }
     }
 }
