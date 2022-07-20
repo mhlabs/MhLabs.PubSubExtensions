@@ -57,8 +57,8 @@ namespace MhLabs.PubSubExtensions.Consumer
                 var responseFromRaw = await HandleRawEvent(ev, context);
 
                 var failures = new List<BatchItemFailure>();
-                failures.AddRange(response.BatchItemFailures);
-                failures.AddRange(responseFromRaw.BatchItemFailures);
+                failures.AddRange(response?.BatchItemFailures ?? new List<BatchItemFailure>());
+                failures.AddRange(responseFromRaw?.BatchItemFailures ?? new List<BatchItemFailure>());
 
                 return new SQSResponse
                 {
